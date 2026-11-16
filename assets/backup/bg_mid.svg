@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" shape-rendering="crispEdges">
+  <!-- Midground Misty Pine & Bamboo Forest (Transparent BG, Seamless at x=0 and x=640) -->
+  <!-- Base Ridge (starts and ends at y=260) -->
+  <polygon points="0,290 0,260 50,248 110,256 180,242 250,252 320,240 390,254 460,244 530,258 590,248 640,260 640,290" fill="#151928" opacity="0.85"/>
+
+  <!-- Pine Tree Cluster 1 (x: 40) -->
+  <polygon points="40,205 32,225 48,225" fill="#1b2032"/>
+  <polygon points="40,215 28,240 52,240" fill="#1b2032"/>
+  <polygon points="40,230 24,255 56,255" fill="#1b2032"/>
+  <rect x="38" y="255" width="4" height="20" fill="#131724"/>
+
+  <!-- Pine Tree Cluster 2 (x: 160) -->
+  <polygon points="160,195 150,218 170,218" fill="#1b2032"/>
+  <polygon points="160,208 145,232 175,232" fill="#1b2032"/>
+  <polygon points="160,222 140,250 180,250" fill="#1b2032"/>
+  <rect x="158" y="250" width="4" height="24" fill="#131724"/>
+
+  <!-- Bamboo Stalks (x: 270..310) -->
+  <rect x="275" y="200" width="3" height="60" fill="#1c2235"/>
+  <rect x="288" y="210" width="3" height="50" fill="#1c2235"/>
+  <rect x="302" y="195" width="3" height="65" fill="#1c2235"/>
+
+  <!-- Pine Tree Cluster 3 (x: 430) -->
+  <polygon points="430,200 422,222 438,222" fill="#1b2032"/>
+  <polygon points="430,212 418,235 442,235" fill="#1b2032"/>
+  <polygon points="430,225 414,252 446,252" fill="#1b2032"/>
+  <rect x="428" y="252" width="4" height="20" fill="#131724"/>
+
+  <!-- Pine Tree Cluster 4 (x: 550) -->
+  <polygon points="550,190 540,215 560,215" fill="#1b2032"/>
+  <polygon points="550,205 535,230 565,230" fill="#1b2032"/>
+  <polygon points="550,220 530,248 570,248" fill="#1b2032"/>
+  <rect x="548" y="248" width="4" height="24" fill="#131724"/>
+
+  <!-- Edge Tree split between x=0 and x=640 for seamless horizontal wrap -->
+  <polygon points="0,215 0,230 14,230" fill="#1b2032"/>
+  <polygon points="640,215 626,230 640,230" fill="#1b2032"/>
+  <polygon points="0,225 0,248 18,248" fill="#1b2032"/>
+  <polygon points="640,225 622,248 640,248" fill="#1b2032"/>
+
+  <!-- Misty Horizon Band -->
+  <rect x="0" y="270" width="640" height="20" fill="#181e30" opacity="0.4"/>
+</svg>

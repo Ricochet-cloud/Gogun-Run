@@ -1,0 +1,844 @@
+/* Google Fonts - 레트로 도트/픽셀 폰트 로드 */
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap');
+
+/* 게임 컨테이너 및 뷰포트 레이아웃 (모바일 100dvh 대응) */
+#game-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: radial-gradient(circle at center, #16192b 0%, #08090d 100%);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+/* 캔버스와 UI 오버레이를 감싸는 뷰포트 */
+#game-viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.85), 0 0 0 2px rgba(60, 68, 97, 0.6);
+  background-color: #0c0f1d;
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* 픽셀 아트 선명도 유지 */
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* ==========================================================================
+   UI 오버레이 및 화면 시스템 (Demon Slayer Theme & Modern Pixel UI)
+   ========================================================================== */
+
+.ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  font-family: 'Press Start 2P', 'DotGothic16', 'Courier New', monospace;
+  z-index: 10;
+}
+
+.ui-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  box-sizing: border-box;
+}
+
+/* 모달 백드롭 (어두운 배경 처리) */
+.modal-backdrop {
+  background: rgba(8, 10, 16, 0.82);
+  justify-content: center;
+  align-items: center;
+  pointer-events: auto;
+}
+
+/* 공통 UI 패널 */
+.ui-panel {
+  background: #111422;
+  border: 2px solid #3c4664;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.9), inset 0 0 0 1px #1d2338;
+  border-radius: 4px;
+  padding: 20px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 90%;
+  box-sizing: border-box;
+}
+
+/* 패널 헤더 타이틀 */
+.panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.badge-theme {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #06d6a0;
+  background: rgba(6, 214, 160, 0.12);
+  border: 1px solid rgba(6, 214, 160, 0.3);
+  padding: 3px 8px;
+  border-radius: 2px;
+}
+
+.logo-text {
+  font-size: 26px;
+  color: #ffd166;
+  text-shadow: 2px 2px 0 #9e1b26, 0 0 14px rgba(255, 209, 102, 0.4);
+  letter-spacing: 3px;
+  margin: 4px 0 0 0;
+}
+
+.ui-title {
+  font-size: 20px;
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+.title-paused {
+  color: #ffd166;
+  text-shadow: 2px 2px 0 #1b2030;
+}
+
+.title-game-over {
+  color: #e63946;
+  font-size: 24px;
+  text-shadow: 2px 2px 0 #4a0d13, 0 0 16px rgba(230, 57, 70, 0.4);
+}
+
+.title-settings {
+  color: #06d6a0;
+  font-size: 16px;
+}
+
+.ui-subtitle {
+  font-size: 9px;
+  color: #94a3b8;
+  letter-spacing: 1px;
+  margin: 0;
+  font-family: 'DotGothic16', monospace;
+}
+
+/* ==========================================================================
+   버튼 컴포넌트
+   ========================================================================== */
+
+.panel-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.ui-btn {
+  font-family: 'Press Start 2P', 'DotGothic16', monospace;
+  font-size: 11px;
+  padding: 10px 14px;
+  border: 2px solid;
+  border-radius: 3px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.05s ease, background 0.1s ease;
+  user-select: none;
+}
+
+.ui-btn:active {
+  transform: translateY(2px) !important;
+}
+
+/* 주 버튼: 탄지로 에메랄드/그린 테마 */
+.ui-btn-primary {
+  background: #0f3d32;
+  color: #e6fff7;
+  border-color: #06d6a0;
+  box-shadow: 0 4px 0 #05241d;
+}
+
+.ui-btn-primary:hover {
+  background: #145042;
+  border-color: #ffd166;
+  color: #ffd166;
+}
+
+/* 보조 버튼: 네이비/슬레이트 테마 */
+.ui-btn-secondary {
+  background: #1c2134;
+  color: #cbd5e1;
+  border-color: #404b70;
+  box-shadow: 0 4px 0 #0f121d;
+}
+
+.ui-btn-secondary:hover {
+  background: #252c46;
+  border-color: #94a3b8;
+  color: #ffffff;
+}
+
+/* 하위 버튼 */
+.ui-btn-subtle {
+  background: transparent;
+  color: #64748b;
+  border-color: #2b334c;
+  box-shadow: 0 2px 0 #0f121d;
+  font-size: 9px;
+  padding: 6px 10px;
+}
+
+.ui-btn-subtle:hover {
+  background: #171b2b;
+  color: #94a3b8;
+  border-color: #475569;
+}
+
+/* 아이콘 버튼 (HUD용) */
+.ui-btn-icon {
+  background: rgba(17, 20, 34, 0.85);
+  color: #cbd5e1;
+  border: 1px solid #3c4664;
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 5px 8px;
+  line-height: 1;
+}
+
+.ui-btn-icon:hover {
+  background: #252c46;
+  color: #ffd166;
+  border-color: #ffd166;
+}
+
+/* ==========================================================================
+   HUD (플레이 중 상단 정보 표시)
+   ========================================================================== */
+
+.hud-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 8px 12px;
+  pointer-events: none;
+}
+
+.hud-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.hud-tag {
+  font-size: 9px;
+  color: #06d6a0;
+  background: rgba(11, 14, 25, 0.8);
+  border: 1px solid #23304a;
+  padding: 5px 8px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+}
+
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud-stat-box {
+  background: rgba(11, 14, 25, 0.85);
+  border: 1px solid #3c4664;
+  padding: 4px 8px;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.hud-label {
+  font-size: 7px;
+  color: #64748b;
+  letter-spacing: 1px;
+}
+
+.hud-value {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.hud-score-val {
+  color: #ffd166;
+  font-weight: bold;
+}
+
+.hud-best-val {
+  color: #06d6a0;
+}
+
+.hud-speed-val {
+  color: #94a3b8;
+  font-size: 9px;
+}
+
+/* ==========================================================================
+   화면별 전용 스타일 (READY, PAUSED, GAME_OVER, SETTINGS)
+   ========================================================================== */
+
+/* 1. 시작 화면 */
+.ready-panel {
+  width: 380px;
+}
+
+.stat-pill {
+  background: #161b2e;
+  border: 1px solid #2d3754;
+  padding: 8px 14px;
+  border-radius: 3px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-pill-label {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.stat-pill-value {
+  font-size: 13px;
+  color: #06d6a0;
+  letter-spacing: 1px;
+}
+
+.guide-box {
+  background: rgba(11, 14, 25, 0.6);
+  border: 1px dashed #2d3754;
+  padding: 8px;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guide-item {
+  font-size: 8px;
+  color: #64748b;
+  font-family: 'DotGothic16', monospace;
+}
+
+.guide-item span {
+  color: #cbd5e1;
+}
+
+/* 2. 일시정지 화면 */
+.paused-panel {
+  width: 320px;
+}
+
+.paused-stats {
+  background: #161b2e;
+  border: 1px solid #2d3754;
+  padding: 10px 14px;
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 9px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #94a3b8;
+}
+
+.accent-gold {
+  color: #ffd166;
+  font-size: 11px;
+}
+
+.accent-teal {
+  color: #06d6a0;
+  font-size: 11px;
+}
+
+/* 3. 게임 오버 화면 */
+.game-over-panel {
+  width: 360px;
+}
+
+.score-summary-card {
+  background: #161b2e;
+  border: 1px solid #3c4664;
+  border-radius: 3px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.score-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-label {
+  font-size: 9px;
+  color: #94a3b8;
+}
+
+.card-val {
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.final-val {
+  color: #ffd166;
+}
+
+.best-val {
+  color: #06d6a0;
+}
+
+.score-card-divider {
+  height: 1px;
+  background: #27304a;
+}
+
+/* 신기록 달성 강조 배너 애니메이션 */
+.new-record-banner {
+  background: linear-gradient(90deg, #ffb703, #ffd166, #ffb703);
+  color: #0c0f1d;
+  font-size: 8px;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 2px;
+  letter-spacing: 1px;
+  margin-top: 4px;
+  animation: pulse-glow 1s infinite alternate;
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 6px rgba(255, 209, 102, 0.4);
+    transform: scale(0.98);
+  }
+  100% {
+    box-shadow: 0 0 16px rgba(255, 209, 102, 0.9);
+    transform: scale(1.02);
+  }
+}
+
+/* 4. 환경 설정 모달 */
+.ui-modal-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 7, 12, 0.88);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.settings-panel {
+  width: 340px;
+}
+
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+
+.setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.setting-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #cbd5e1;
+}
+
+.setting-val {
+  color: #ffd166;
+}
+
+/* 커스텀 슬라이더 */
+.ui-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 8px;
+  background: #1c2134;
+  border: 1px solid #3c4664;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.ui-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #06d6a0;
+  border: 2px solid #ffffff;
+  border-radius: 2px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.ui-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: #06d6a0;
+  border: 2px solid #ffffff;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+/* 체크박스 커스텀 */
+.setting-checkbox-item {
+  padding-top: 4px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 9px;
+  color: #cbd5e1;
+}
+
+.ui-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #06d6a0;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   가상 모바일 / 터치 조작 버튼 (STEP 5 & 6 - 모바일 최적화)
+   ========================================================================== */
+.hud-touch-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+  z-index: 15;
+}
+
+.ui-touch-btn {
+  font-family: 'Press Start 2P', monospace;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: transform 0.05s ease, background 0.1s ease;
+  touch-action: none;
+  -webkit-user-select: none;
+}
+
+.ui-touch-btn:active {
+  transform: translateY(2px) scale(0.94);
+}
+
+.touch-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.touch-label {
+  font-size: 7px;
+  letter-spacing: 0.5px;
+}
+
+/* 모바일 화면 최적화 (576px 이하: 작은 폰) */
+@media (max-width: 576px) {
+  .hud-touch-controls {
+    right: 8px;
+    bottom: 8px;
+    gap: 8px;
+  }
+
+  .ui-touch-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .touch-icon {
+    font-size: 14px;
+  }
+
+  .touch-label {
+    font-size: 6px;
+  }
+}
+
+/* 태블릿 및 넓은 화면 (1024px 이상) */
+@media (min-width: 1024px) {
+  .hud-touch-controls {
+    right: 16px;
+    bottom: 16px;
+    gap: 12px;
+  }
+
+  .ui-touch-btn {
+    width: 64px;
+    height: 64px;
+    min-width: 64px;
+    min-height: 64px;
+  }
+
+  .touch-icon {
+    font-size: 18px;
+  }
+
+  .touch-label {
+    font-size: 8px;
+  }
+}
+
+/* 점프 버튼: 탄지로 에메랄드 */
+.touch-btn-jump {
+  background: #0f3d32;
+  color: #e6fff7;
+  border: 2px solid #06d6a0;
+  box-shadow: 0 4px 0 #05241d;
+}
+
+.touch-btn-jump:hover {
+  background: #145042;
+  border-color: #ffd166;
+  color: #ffd166;
+}
+
+/* 갈고리 버튼: 등꽃 보라 / 귀살대 퍼플 */
+.touch-btn-hook {
+  background: #2b173d;
+  color: #ffd166;
+  border: 2px solid #a855f7;
+  box-shadow: 0 4px 0 #180a24;
+}
+
+.touch-btn-hook:hover {
+  background: #3b2054;
+  border-color: #ffd166;
+  color: #ffffff;
+}
+
+/* 모바일 세로 모드 안내 힌트 배너 (STEP 6) */
+.portrait-hint-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid #ffd166;
+  color: #ffd166;
+  font-size: 9px;
+  font-family: 'DotGothic16', monospace;
+  padding: 6px 14px;
+  border-radius: 4px;
+  z-index: 100;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8);
+  animation: banner-fade 2.5s infinite alternate;
+}
+
+@keyframes banner-fade {
+  0% {
+    opacity: 0.82;
+  }
+  100% {
+    opacity: 1.0;
+  }
+}
+
+/* 원인 서브타이틀 */
+.cause-text {
+  font-size: 9px;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   모바일 반응형 스타일 (STEP 6 - 작은 화면 최적화)
+   ========================================================================== */
+
+/* 작은 폰 (최대 480px) */
+@media (max-width: 480px) {
+  /* HUD 축소 */
+  .hud-container {
+    padding: 6px 8px;
+  }
+
+  .hud-tag {
+    font-size: 7px;
+    padding: 3px 6px;
+  }
+
+  .hud-stat-box {
+    padding: 2px 6px;
+    gap: 1px;
+  }
+
+  .hud-label {
+    font-size: 6px;
+  }
+
+  .hud-value {
+    font-size: 9px;
+  }
+
+  .hud-speed-val {
+    font-size: 8px;
+  }
+
+  /* UI 패널 축소 */
+  .ui-panel {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .ready-panel,
+  .paused-panel,
+  .game-over-panel,
+  .settings-panel {
+    max-width: 90vw;
+    width: auto;
+  }
+
+  .ui-btn {
+    font-size: 9px;
+    padding: 8px 12px;
+  }
+
+  .ui-title {
+    font-size: 16px;
+  }
+
+  .ui-subtitle {
+    font-size: 8px;
+  }
+
+  .stat-pill-value,
+  .card-val {
+    font-size: 12px;
+  }
+
+  .guide-box {
+    gap: 3px;
+  }
+
+  .guide-item {
+    font-size: 7px;
+  }
+
+  .logo-text {
+    font-size: 20px;
+  }
+}
+
+/* 중간 폰 (481px - 640px) */
+@media (max-width: 640px) and (min-width: 481px) {
+  .hud-right {
+    gap: 6px;
+  }
+
+  .hud-stat-box {
+    padding: 3px 7px;
+  }
+
+  .ui-panel {
+    max-width: 85vw;
+  }
+
+  .ready-panel {
+    width: auto;
+  }
+
+  .paused-panel {
+    width: auto;
+  }
+
+  .game-over-panel {
+    width: auto;
+  }
+
+  .settings-panel {
+    width: auto;
+  }
+}
+
+/* 세로 모드 추가 최적화 */
+@media (max-height: 500px) and (orientation: portrait) {
+  .hud-container {
+    padding: 4px 6px;
+  }
+
+  .ui-btn {
+    padding: 6px 10px;
+    font-size: 9px;
+  }
+
+  .guide-box {
+    display: none;
+  }
+
+  .portrait-hint-banner {
+    font-size: 8px;
+    padding: 4px 10px;
+    top: 8px;
+  }
+}

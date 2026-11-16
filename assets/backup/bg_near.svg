@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" shape-rendering="crispEdges">
+  <!-- Near Foreground Parallax: Traditional Wooden Fences, Stone Lanterns, Wisteria Silhouettes -->
+  <!-- Seamless wrap at x=0 and x=640 -->
+
+  <!-- Stone Lantern (Toro) 1 at x=100 -->
+  <polygon points="100,250 94,255 106,255" fill="#252a3d"/>
+  <rect x="96" y="255" width="8" height="6" fill="#252a3d"/>
+  <!-- Lantern Warm Light Core -->
+  <rect x="98" y="256" width="4" height="4" fill="#ffd166"/>
+  <polygon points="100,261 95,263 105,263" fill="#252a3d"/>
+  <rect x="98" y="263" width="4" height="15" fill="#252a3d"/>
+  <rect x="95" y="278" width="10" height="12" fill="#1b1e2c"/>
+
+  <!-- Wooden Japanese Post Fence (x: 180..240) -->
+  <rect x="180" y="268" width="60" height="3" fill="#222638"/>
+  <rect x="180" y="276" width="60" height="3" fill="#222638"/>
+  <rect x="185" y="262" width="4" height="28" fill="#2b3147"/>
+  <rect x="202" y="262" width="4" height="28" fill="#2b3147"/>
+  <rect x="219" y="262" width="4" height="28" fill="#2b3147"/>
+  <rect x="236" y="262" width="4" height="28" fill="#2b3147"/>
+
+  <!-- Stone Lantern (Toro) 2 at x=380 -->
+  <polygon points="380,248 374,253 386,253" fill="#252a3d"/>
+  <rect x="376" y="253" width="8" height="6" fill="#252a3d"/>
+  <rect x="378" y="254" width="4" height="4" fill="#ffd166"/>
+  <polygon points="380,259 375,261 385,261" fill="#252a3d"/>
+  <rect x="378" y="261" width="4" height="17" fill="#252a3d"/>
+  <rect x="375" y="278" width="10" height="12" fill="#1b1e2c"/>
+
+  <!-- Wooden Japanese Post Fence (x: 480..540) -->
+  <rect x="480" y="268" width="60" height="3" fill="#222638"/>
+  <rect x="480" y="276" width="60" height="3" fill="#222638"/>
+  <rect x="485" y="262" width="4" height="28" fill="#2b3147"/>
+  <rect x="502" y="262" width="4" height="28" fill="#2b3147"/>
+  <rect x="519" y="262" width="4" height="28" fill="#2b3147"/>
+  <rect x="536" y="262" width="4" height="28" fill="#2b3147"/>
+
+  <!-- Low Shrubs & Bamboo Silhouettes along the road -->
+  <polygon points="20,278 28,266 36,278" fill="#1e2334"/>
+  <polygon points="32,278 40,268 48,278" fill="#1e2334"/>
+
+  <polygon points="310,278 318,265 326,278" fill="#1e2334"/>
+  <polygon points="324,278 332,267 340,278" fill="#1e2334"/>
+
+  <polygon points="600,278 608,266 616,278" fill="#1e2334"/>
+  <polygon points="612,278 620,268 628,278" fill="#1e2334"/>
+</svg>

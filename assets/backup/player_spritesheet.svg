@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="336" height="48" viewBox="0 0 336 48" shape-rendering="crispEdges">
+  <!-- FRAME 0: RUN 1 (X: 0) -->
+  <g id="frame-run-1" transform="translate(0, 0)">
+    <!-- Hair (Dark Burgundy) -->
+    <rect x="12" y="2" width="22" height="14" fill="#4a1525"/>
+    <rect x="8" y="6" width="6" height="8" fill="#4a1525"/>
+    <rect x="18" y="2" width="8" height="4" fill="#851e3e"/>
+    <!-- Face (Peach) -->
+    <rect x="18" y="6" width="16" height="10" fill="#fbd4b4"/>
+    <!-- Scar -->
+    <rect x="20" y="7" width="3" height="3" fill="#a82835"/>
+    <!-- Eye -->
+    <rect x="28" y="8" width="4" height="4" fill="#851e3e"/>
+    <rect x="30" y="9" width="1" height="1" fill="#ffffff"/>
+    <!-- Torso & Checkered Haori -->
+    <rect x="10" y="16" width="22" height="18" fill="#10141a"/>
+    <!-- Haori Green/Black Checkers -->
+    <rect x="10" y="16" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="16" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="30" y="16" width="2" height="5" fill="#2a9d8f"/>
+    <rect x="15" y="21" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="25" y="21" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="10" y="26" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="26" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="30" y="26" width="2" height="5" fill="#2a9d8f"/>
+    <!-- Katana Scabbard -->
+    <rect x="6" y="27" width="10" height="3" fill="#8d99ae"/>
+    <rect x="3" y="26" width="4" height="4" fill="#111111"/>
+    <!-- Front Leg (Extended Forward) -->
+    <rect x="26" y="34" width="5" height="10" fill="#fbd4b4"/>
+    <rect x="26" y="44" width="7" height="2" fill="#e76f51"/>
+    <!-- Back Leg (Trailing Backward) -->
+    <rect x="12" y="34" width="5" height="9" fill="#c79f82"/>
+    <rect x="10" y="43" width="7" height="2" fill="#b74f35"/>
+  </g>
+
+  <!-- FRAME 1: RUN 2 (X: 48) Passing step, down -->
+  <g id="frame-run-2" transform="translate(48, 1)">
+    <!-- Hair -->
+    <rect x="12" y="3" width="22" height="14" fill="#4a1525"/>
+    <rect x="7" y="8" width="6" height="7" fill="#4a1525"/>
+    <rect x="18" y="3" width="8" height="4" fill="#851e3e"/>
+    <!-- Face -->
+    <rect x="18" y="7" width="16" height="10" fill="#fbd4b4"/>
+    <!-- Scar -->
+    <rect x="20" y="8" width="3" height="3" fill="#a82835"/>
+    <!-- Eye -->
+    <rect x="28" y="9" width="4" height="4" fill="#851e3e"/>
+    <rect x="30" y="10" width="1" height="1" fill="#ffffff"/>
+    <!-- Torso & Haori -->
+    <rect x="10" y="17" width="22" height="18" fill="#10141a"/>
+    <rect x="10" y="17" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="17" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="30" y="17" width="2" height="5" fill="#2a9d8f"/>
+    <rect x="15" y="22" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="25" y="22" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="10" y="27" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="27" width="5" height="5" fill="#2a9d8f"/>
+    <!-- Katana -->
+    <rect x="6" y="28" width="10" height="3" fill="#8d99ae"/>
+    <rect x="3" y="27" width="4" height="4" fill="#111111"/>
+    <!-- Legs (Passing close) -->
+    <rect x="20" y="35" width="5" height="10" fill="#fbd4b4"/>
+    <rect x="20" y="44" width="7" height="2" fill="#e76f51"/>
+    <rect x="15" y="35" width="5" height="9" fill="#c79f82"/>
+    <rect x="15" y="43" width="6" height="2" fill="#b74f35"/>
+  </g>
+
+  <!-- FRAME 2: RUN 3 (X: 96) Opposite leg extended -->
+  <g id="frame-run-3" transform="translate(96, 0)">
+    <!-- Hair -->
+    <rect x="12" y="2" width="22" height="14" fill="#4a1525"/>
+    <rect x="8" y="6" width="6" height="8" fill="#4a1525"/>
+    <rect x="18" y="2" width="8" height="4" fill="#851e3e"/>
+    <!-- Face -->
+    <rect x="18" y="6" width="16" height="10" fill="#fbd4b4"/>
+    <!-- Scar -->
+    <rect x="20" y="7" width="3" height="3" fill="#a82835"/>
+    <!-- Eye -->
+    <rect x="28" y="8" width="4" height="4" fill="#851e3e"/>
+    <rect x="30" y="9" width="1" height="1" fill="#ffffff"/>
+    <!-- Torso & Haori -->
+    <rect x="10" y="16" width="22" height="18" fill="#10141a"/>
+    <rect x="10" y="16" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="16" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="30" y="16" width="2" height="5" fill="#2a9d8f"/>
+    <rect x="15" y="21" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="25" y="21" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="10" y="26" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="26" width="5" height="5" fill="#2a9d8f"/>
+    <!-- Katana -->
+    <rect x="6" y="27" width="10" height="3" fill="#8d99ae"/>
+    <rect x="3" y="26" width="4" height="4" fill="#111111"/>
+    <!-- Front Leg (Other leg forward) -->
+    <rect x="14" y="34" width="5" height="10" fill="#c79f82"/>
+    <rect x="12" y="44" width="7" height="2" fill="#b74f35"/>
+    <!-- Back Leg (Other leg backward) -->
+    <rect x="24" y="34" width="5" height="9" fill="#fbd4b4"/>
+    <rect x="25" y="43" width="7" height="2" fill="#e76f51"/>
+  </g>
+
+  <!-- FRAME 3: RUN 4 (X: 144) Passing step, up -->
+  <g id="frame-run-4" transform="translate(144, -1)">
+    <!-- Hair -->
+    <rect x="12" y="2" width="22" height="14" fill="#4a1525"/>
+    <rect x="8" y="6" width="6" height="8" fill="#4a1525"/>
+    <rect x="18" y="2" width="8" height="4" fill="#851e3e"/>
+    <!-- Face -->
+    <rect x="18" y="6" width="16" height="10" fill="#fbd4b4"/>
+    <!-- Scar -->
+    <rect x="20" y="7" width="3" height="3" fill="#a82835"/>
+    <!-- Eye -->
+    <rect x="28" y="8" width="4" height="4" fill="#851e3e"/>
+    <rect x="30" y="9" width="1" height="1" fill="#ffffff"/>
+    <!-- Torso & Haori -->
+    <rect x="10" y="16" width="22" height="18" fill="#10141a"/>
+    <rect x="10" y="16" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="16" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="30" y="16" width="2" height="5" fill="#2a9d8f"/>
+    <rect x="15" y="21" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="25" y="21" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="10" y="26" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="26" width="5" height="5" fill="#2a9d8f"/>
+    <!-- Katana -->
+    <rect x="6" y="27" width="10" height="3" fill="#8d99ae"/>
+    <rect x="3" y="26" width="4" height="4" fill="#111111"/>
+    <!-- Legs -->
+    <rect x="18" y="35" width="5" height="10" fill="#fbd4b4"/>
+    <rect x="18" y="44" width="7" height="2" fill="#e76f51"/>
+    <rect x="14" y="35" width="5" height="9" fill="#c79f82"/>
+    <rect x="13" y="43" width="6" height="2" fill="#b74f35"/>
+  </g>
+
+  <!-- FRAME 4: JUMP (X: 192) Tucked legs, haori billowing -->
+  <g id="frame-jump" transform="translate(192, 0)">
+    <!-- Hair (Flying slightly up/back) -->
+    <rect x="12" y="1" width="22" height="14" fill="#4a1525"/>
+    <rect x="6" y="4" width="8" height="8" fill="#4a1525"/>
+    <rect x="16" y="1" width="8" height="4" fill="#851e3e"/>
+    <!-- Face (Looking up/forward) -->
+    <rect x="18" y="5" width="16" height="10" fill="#fbd4b4"/>
+    <!-- Scar -->
+    <rect x="20" y="6" width="3" height="3" fill="#a82835"/>
+    <!-- Eye (Focused forward) -->
+    <rect x="28" y="7" width="4" height="4" fill="#851e3e"/>
+    <rect x="30" y="8" width="1" height="1" fill="#ffffff"/>
+    <!-- Haori Flares Backward -->
+    <rect x="6" y="14" width="26" height="18" fill="#10141a"/>
+    <rect x="6" y="14" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="16" y="14" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="26" y="14" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="11" y="19" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="21" y="19" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="6" y="24" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="16" y="24" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="26" y="24" width="5" height="5" fill="#2a9d8f"/>
+    <!-- Katana -->
+    <rect x="2" y="23" width="12" height="3" fill="#8d99ae"/>
+    <rect x="0" y="22" width="4" height="4" fill="#111111"/>
+    <!-- Legs (Tucked high for jump) -->
+    <rect x="16" y="32" width="6" height="7" fill="#fbd4b4"/>
+    <rect x="18" y="39" width="7" height="3" fill="#e76f51"/>
+    <rect x="12" y="31" width="5" height="7" fill="#c79f82"/>
+    <rect x="13" y="38" width="6" height="3" fill="#b74f35"/>
+  </g>
+
+  <!-- FRAME 5: LAND (X: 240) Crouch impact pose -->
+  <g id="frame-land" transform="translate(240, 5)">
+    <!-- Hair -->
+    <rect x="12" y="3" width="22" height="14" fill="#4a1525"/>
+    <rect x="7" y="7" width="6" height="8" fill="#4a1525"/>
+    <rect x="18" y="3" width="8" height="4" fill="#851e3e"/>
+    <!-- Face -->
+    <rect x="18" y="7" width="16" height="10" fill="#fbd4b4"/>
+    <!-- Scar -->
+    <rect x="20" y="8" width="3" height="3" fill="#a82835"/>
+    <!-- Eye -->
+    <rect x="28" y="9" width="4" height="4" fill="#851e3e"/>
+    <rect x="30" y="10" width="1" height="1" fill="#ffffff"/>
+    <!-- Torso (Squatted) -->
+    <rect x="10" y="17" width="24" height="16" fill="#10141a"/>
+    <rect x="10" y="17" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="17" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="30" y="17" width="4" height="5" fill="#2a9d8f"/>
+    <rect x="15" y="22" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="25" y="22" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="10" y="27" width="5" height="5" fill="#2a9d8f"/>
+    <rect x="20" y="27" width="5" height="5" fill="#2a9d8f"/>
+    <!-- Legs (Bent wide) -->
+    <rect x="10" y="33" width="7" height="6" fill="#c79f82"/>
+    <rect x="8" y="38" width="9" height="2" fill="#b74f35"/>
+    <rect x="25" y="33" width="7" height="6" fill="#fbd4b4"/>
+    <rect x="25" y="38" width="9" height="2" fill="#e76f51"/>
+    <!-- Landing Dust Puffs -->
+    <rect x="4" y="37" width="4" height="2" fill="#ffffff" opacity="0.6"/>
+    <rect x="35" y="37" width="4" height="2" fill="#ffffff" opacity="0.6"/>
+  </g>
+
+  <!-- FRAME 6: DEAD (X: 288) Knocked back / defeated -->
+  <g id="frame-dead" transform="translate(288, 4)">
+    <!-- Hair -->
+    <rect x="10" y="4" width="22" height="14" fill="#4a1525"/>
+    <rect x="5" y="6" width="6" height="8" fill="#4a1525"/>
+    <!-- Face (Tilted / pale) -->
+    <rect x="16" y="8" width="16" height="10" fill="#dfc8b4"/>
+    <!-- X-shaped Dead Eyes -->
+    <rect x="24" y="10" width="1" height="1" fill="#780000"/>
+    <rect x="26" y="10" width="1" height="1" fill="#780000"/>
+    <rect x="25" y="11" width="1" height="1" fill="#780000"/>
+    <rect x="24" y="12" width="1" height="1" fill="#780000"/>
+    <rect x="26" y="12" width="1" height="1" fill="#780000"/>
+    <!-- Torso (Fallen) -->
+    <rect x="8" y="18" width="24" height="16" fill="#10141a"/>
+    <rect x="8" y="18" width="5" height="5" fill="#1d2a23"/>
+    <rect x="18" y="18" width="5" height="5" fill="#1d2a23"/>
+    <rect x="13" y="23" width="5" height="5" fill="#1d2a23"/>
+    <rect x="23" y="23" width="5" height="5" fill="#1d2a23"/>
+    <!-- Katana dropped -->
+    <rect x="2" y="32" width="12" height="2" fill="#8d99ae"/>
+    <rect x="0" y="31" width="3" height="3" fill="#111111"/>
+    <!-- Legs flat -->
+    <rect x="12" y="34" width="16" height="5" fill="#dfc8b4"/>
+    <rect x="26" y="34" width="4" height="5" fill="#e76f51"/>
+  </g>
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="46" viewBox="0 0 32 46" shape-rendering="crispEdges">
+  <!-- Wooden Bamboo Stakes with Talisman -->
+  <!-- Left Stake -->
+  <polygon points="5,10 1,46 10,46" fill="#5c3d2e"/>
+  <!-- Center Stake (Tallest) -->
+  <polygon points="16,0 10,46 22,46" fill="#7f5539"/>
+  <!-- Right Stake -->
+  <polygon points="27,8 21,46 32,46" fill="#5c3d2e"/>
+
+  <!-- Highlights & Wood Grain -->
+  <polygon points="16,2 14,20 18,20" fill="#9c6644"/>
+  <rect x="5" y="14" width="2" height="10" fill="#7f5539"/>
+  <rect x="25" y="12" width="2" height="12" fill="#7f5539"/>
+
+  <!-- Binding Straw Rope -->
+  <rect x="2" y="26" width="28" height="4" fill="#ede0d4"/>
+  <rect x="2" y="28" width="28" height="1" fill="#9c6644"/>
+
+  <!-- Red Demonic Talisman Ribbon -->
+  <rect x="14" y="30" width="4" height="12" fill="#d90429"/>
+  <!-- Talisman Sacred Rune -->
+  <rect x="15" y="32" width="2" height="2" fill="#ffffff"/>
+  <rect x="15" y="36" width="2" height="3" fill="#ffffff"/>
+</svg>
