@@ -133,6 +133,7 @@ export class Player {
    */
   land(surfaceY) {
     this.y = surfaceY - this.height;
+    this.impactVy = this.vy; // 착지 직전 낙하 속도 (착지 연출 강도에 사용)
     this.vy = 0;
     this.isOnGround = true;
     this.state = PlayerState.RUNNING;

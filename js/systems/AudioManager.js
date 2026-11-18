@@ -203,16 +203,17 @@ export class AudioManager {
 
   /**
    * 효과음 재생 (동일 사운드 연속 재생 및 파일 누락 시 Web Audio API 합성 폴백 지원)
-   * @param {'JUMP' | 'LAND' | 'HIT' | 'GAME_OVER' | 'BUTTON_CLICK'} sfxKey
+   * @param {'JUMP' | 'LAND' | 'HIT' | 'GAME_OVER' | 'BUTTON_CLICK' | 'NEAR_MISS'} sfxKey
+   * @param {{ combo?: number, perfect?: boolean }} [options] 합성음 변주용 옵션 (NEAR_MISS: 콤보가 높을수록 높은 음)
    */
-  playSfx(sfxKey) {
+  playSfx(sfxKey, options = {}) {
     if (this.isMuted || this.sfxVolume <= 0) {
       return;
     }
 
     // 파일 로드 실패 또는 누락된 경우 Web Audio API 합성 사운드 출력
     if (this.sfxFailed.has(sfxKey)) {
-      this._playSynthesizedSfx(sfxKey);
+      this._playSynthesizedSfx(sfxKey, options);
       return;
     }
 
@@ -230,22 +231,23 @@ export class AudioManager {
         if (promise !== undefined) {
           promise.catch(() => {
             // 재생 실패 시 폴백 합성 시도
-            this._playSynthesizedSfx(sfxKey);
+            this._playSynthesizedSfx(sfxKey, options);
           });
         }
       } catch (err) {
-        this._playSynthesizedSfx(sfxKey);
+        this._playSynthesizedSfx(sfxKey, options);
       }
     } else {
-      this._playSynthesizedSfx(sfxKey);
+      this._playSynthesizedSfx(sfxKey, options);
     }
   }
 
   /**
    * 오디오 파일이 누락되었을 때의 8비트/레트로 감성 Web Audio API 실시간 합성 사운드
    * @param {string} sfxKey
+   * @param {{ combo?: number, perfect?: boolean }} [options]
    */
-  _playSynthesizedSfx(sfxKey) {
+  _playSynthesizedSfx(sfxKey, options = {}) {
     if (!this.audioCtx || this.isMuted || this.sfxVolume <= 0) return;
 
     if (this.audioCtx.state === 'suspended' && this.isAudioUnlocked) {
@@ -383,6 +385,29 @@ export class AudioManager {
           gain.connect(masterGain);
           osc.start(now);
           osc.stop(now + 0.16);
+          break;
+        }
+
+        case 'NEAR_MISS': {
+          // 니어미스 "띠링": 콤보가 쌓일수록 음이 한 음씩 올라감 (최대 8단계), 퍼펙트는 3음
+          const step = Math.min(Math.max((options.combo || 1) - 1, 0), 8);
+          const root = 740 * Math.pow(2, (step * 2) / 12);
+          const notes = options.perfect ? [root, root * 1.25, root * 1.5] : [root, root * 1.5];
+          notes.forEach((freq, idx) => {
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            const t = now + idx * 0.055;
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, t);
+
+            gain.gain.setValueAtTime(0.9, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start(t);
+            osc.stop(t + 0.11);
+          });
           break;
         }
       }

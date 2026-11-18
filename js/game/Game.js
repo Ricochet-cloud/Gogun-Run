@@ -12,6 +12,8 @@ import { Collision } from './Collision.js';
 import { ScoreManager } from './ScoreManager.js';
 import { TerrainManager } from './TerrainManager.js';
 import { HookSystem } from './HookSystem.js';
+import { EffectsSystem } from './EffectsSystem.js';
+import { NearMissSystem } from './NearMissSystem.js';
 
 /**
  * Gogun Run 메인 게임 엔진 (STEP 5)
@@ -39,6 +41,11 @@ export class Game {
     // 4. 렌더러 초기화
     this.renderer = new Renderer(this.canvas, this.config, this.assetsConfig);
 
+    // 4-1. 타격감 연출 및 니어미스 콤보 시스템 초기화
+    this.effects = new EffectsSystem(this.config, this.renderer);
+    this.nearMiss = new NearMissSystem(this.config);
+    this._nextMilestone = this.config.EFFECTS?.MILESTONE_STEP || 0;
+
     // 5. 지형 및 낭떠러지 관리자 초기화 (STEP 5 & 6)
     this.terrainManager = new TerrainManager(this.config);
 
@@ -61,14 +68,25 @@ export class Game {
     );
 
     // 8. 플레이어 사운드 및 피드백 이벤트 훅 연결 (STEP 6 착지 먼지 연동)
-    this.player.onJump = () => this.audioManager.playSfx('JUMP');
+    this.player.onJump = () => {
+      this.audioManager.playSfx('JUMP');
+      this.effects.jumpPuff(
+        this.player.x + this.player.width / 2,
+        this.player.y + this.player.height
+      );
+    };
     this.player.onLand = () => {
       this.audioManager.playSfx('LAND');
-      if (this.renderer) {
-        this.renderer.spawnDust(
-          this.player.x + this.player.width / 2,
-          this.player.y + this.player.height
-        );
+      this.effects.landImpact(
+        this.player.x + this.player.width / 2,
+        this.player.y + this.player.height,
+        this.player.impactVy || 0
+      );
+
+      // 낭떠러지 건너편 지면 끝에 아슬아슬하게 걸쳐 착지했다면 니어미스
+      const ledge = this.nearMiss.checkLedgeLanding(this.player, this.terrainManager.getPlatforms());
+      if (ledge) {
+        this._handleNearMiss(ledge);
       }
     };
 
@@ -196,6 +214,7 @@ export class Game {
     if (this.gameState.is(GameState.PLAYING)) {
       // 갈고리에 매달려 있는 상태에서 점프를 누르면 갈고리 해제 및 관성 점프로 직관적 연계
       if (this.player.state === PlayerState.HOOKED) {
+        this.effects.hookRelease(this.player.x + this.player.width / 2, this.player.y);
         this.hookSystem.releaseHook(this.player, this.audioManager);
       } else {
         this.player.jump();
@@ -217,13 +236,34 @@ export class Game {
   handleHook() {
     if (this.gameState.is(GameState.PLAYING)) {
       const res = this.hookSystem.triggerHook(this.player, this.audioManager);
-      if (res === 'CONNECTED' && this.hookSystem.connectedAnchor && this.renderer) {
-        this.renderer.spawnSparks(
-          this.hookSystem.connectedAnchor.x,
-          this.hookSystem.connectedAnchor.y
-        );
+      if (res === 'CONNECTED' && this.hookSystem.connectedAnchor) {
+        const anchor = this.hookSystem.connectedAnchor;
+        if (this.renderer) this.renderer.spawnSparks(anchor.x, anchor.y);
+        this.effects.hookConnect(anchor.x, anchor.y);
+      } else if (res === 'RELEASED') {
+        this.effects.hookRelease(this.player.x + this.player.width / 2, this.player.y);
       }
     }
+  }
+
+  /**
+   * 니어미스 이벤트 처리: 보너스 점수, 연출, 효과음
+   * @param {object} ev NearMissSystem 이벤트
+   */
+  _handleNearMiss(ev) {
+    if (!ev) return;
+    this.scoreManager.addBonus(ev.bonus);
+    this.effects.nearMissBurst(ev.kind, ev.x, ev.y, ev, ev.sparkX, ev.sparkY);
+    this.audioManager.playSfx('NEAR_MISS', { combo: ev.combo, perfect: ev.kind === 'PERFECT' });
+  }
+
+  /**
+   * 런 단위 연출/콤보 상태 초기화
+   */
+  _resetRunFx() {
+    this.effects.reset();
+    this.nearMiss.reset();
+    this._nextMilestone = this.config.EFFECTS?.MILESTONE_STEP || 0;
   }
 
   /**
@@ -270,6 +310,7 @@ export class Game {
     this.obstacleSpawner.reset(this.currentSpeed);
     this.scoreManager.reset();
     this.renderer.resetEffects();
+    this._resetRunFx();
     this.inputManager.setEnabled(true);
     this.lastTime = performance.now();
     this.gameState.setState(GameState.PLAYING);
@@ -288,6 +329,7 @@ export class Game {
     this.obstacleSpawner.reset(this.currentSpeed);
     this.scoreManager.reset();
     this.renderer.resetEffects();
+    this._resetRunFx();
     this.inputManager.setEnabled(true);
     this.gameState.setState(GameState.READY);
     this.audioManager.stopBgm();
@@ -336,8 +378,12 @@ export class Game {
     // 탭 전환 등 긴 지연 시 물리 튀는 현상 방지
     const dt = Math.min(rawDt, this.config.LOOP.MAX_DELTA_TIME);
 
-    this.update(dt);
-    this.render(dt);
+    // 히트스톱: 짧은 정지 연출 (물리/렌더 모두 dt=0)
+    const frozen = this.effects.tickHitStop(dt);
+    const stepDt = frozen ? 0 : dt;
+
+    this.update(stepDt);
+    this.render(stepDt);
 
     this.animationFrameId = requestAnimationFrame(this._loop.bind(this));
   }
@@ -388,6 +434,17 @@ export class Game {
 
         if (isCollided) {
           this.handleGameOver('OBSTACLE');
+        } else {
+          // 10. 니어미스 판정 (장애물 아슬아슬 통과)
+          const events = this.nearMiss.update(dt, this.player, this.obstacleSpawner.getObstacles());
+          for (const ev of events) this._handleNearMiss(ev);
+
+          // 11. 점수 마일스톤 연출
+          const step = this.config.EFFECTS?.MILESTONE_STEP || 0;
+          if (step > 0 && this.scoreManager.currentScore >= this._nextMilestone) {
+            this.effects.milestone(this._nextMilestone);
+            this._nextMilestone += step;
+          }
         }
       }
     }
@@ -410,6 +467,15 @@ export class Game {
     }
 
     this.gameOverTime = performance.now();
+
+    // 점수 확정/원인/통계는 UI 전환(리스너 동기 실행) 전에 반영해야 최고기록·신기록이 올바르게 표시됨
+    this.scoreManager.finalizeScore();
+    this.uiManager.setGameOverCause(cause);
+    this.uiManager.setRunStats({
+      nearMisses: this.nearMiss.totalCount,
+      maxCombo: this.nearMiss.maxCombo,
+    });
+
     this.gameState.setState(GameState.GAME_OVER);
     this.player.die();
 
@@ -417,7 +483,7 @@ export class Game {
     this.hookSystem.state = 'IDLE';
     this.hookSystem.connectedAnchor = null;
 
-    // 시각 피드백: 장애물 충돌 시 화면 흔들림+붉은 섬광, 추락 시 암전 비네트 (STEP 6)
+    // 시각 피드백: 장애물 충돌 시 화면 흔들림+붉은 섬광, 추락 시 암전 비네트
     if (this.renderer) {
       if (cause === 'OBSTACLE') {
         this.renderer.triggerHitEffect();
@@ -425,12 +491,13 @@ export class Game {
         this.renderer.triggerFallEffect();
       }
     }
-
-    // UI에 사망 원인 전달 (추락 vs 충돌)
-    this.uiManager.setGameOverCause(cause);
-
-    // 점수 확정 및 최고 기록 갱신 검사 (LocalStorage 자동 반영)
-    this.scoreManager.finalizeScore();
+    if (cause === 'OBSTACLE') {
+      this.effects.deathBurst(
+        this.player.x + this.player.width / 2,
+        this.player.y + this.player.height / 2
+      );
+    }
+    this.effects.setCombo(0, 0);
 
     // 오디오 처리: BGM 정지, 타격/추락 효과음 및 게임 오버 징글 재생
     this.audioManager.stopBgm();
@@ -469,11 +536,25 @@ export class Game {
     // 5. 로프 렌더링 (연결 시 빛나는 강철 와이어 라인)
     this.renderer.drawRope(this.player, this.hookSystem.connectedAnchor);
 
+    // 5-1. 이펙트 갱신 및 속도선(캐릭터 뒤)
+    this.effects.update(dt, {
+      player: this.player,
+      speed: this.currentSpeed,
+      playing: this.gameState.is(GameState.PLAYING),
+    });
+    if (this.gameState.is(GameState.PLAYING)) {
+      this.effects.setCombo(this.nearMiss.combo, this.nearMiss.timeLeft);
+    }
+    this.effects.drawBehind(this.renderer.ctx);
+
     // 6. 장애물 에셋 렌더링
     this.obstacleSpawner.render(this.renderer.ctx);
 
     // 7. 플레이어 스프라이트 렌더링 (공중제비 회전 지원)
     this.player.render(this.renderer.ctx);
+
+    // 7-1. 파티클/링/팝업/콤보 HUD
+    this.effects.drawFront(this.renderer.ctx);
 
     // 8. 포스트 렌더링 효과 (파티클, 화면 흔들림 복원, 피격 섬광, 추락 암전)
     this.renderer.renderPostEffects(dt);

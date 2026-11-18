@@ -106,6 +106,29 @@ export const GAME_CONFIG = Object.freeze({
     SOMERSAULT_SPEED: 12.0,      // 공중제비 회전 각속도 (rad/s)
   },
 
+  // 니어미스(아슬아슬 통과) 및 콤보 설정
+  NEAR_MISS: {
+    OBSTACLE_MAX_GAP: 16,       // 장애물 위를 지나갈 때 히트박스 간 최소 수직 간격이 이 값 이하면 니어미스 (px)
+    OBSTACLE_PERFECT_GAP: 6,    // 이 값 이하면 퍼펙트 (px)
+    LEDGE_MAX_OVERLAP: 14,      // 낭떠러지 건너편 지면 끝에 발이 이만큼만 걸쳐 착지하면 아슬아슬 착지 (px)
+    BASE_POINTS: 30,            // 니어미스 기본 보너스 점수
+    PERFECT_MULTIPLIER: 2,      // 퍼펙트 보너스 배율
+    LEDGE_POINTS: 40,           // 아슬아슬 착지 기본 보너스 점수
+    COMBO_TIMEOUT: 2.8,         // 이 시간(초) 안에 다음 니어미스가 없으면 콤보 종료
+    MAX_COMBO_MULTIPLIER: 5,    // 콤보 점수 배율 상한 (보너스 = 기본 점수 × min(콤보, 상한))
+  },
+
+  // 타격감 연출 설정 (수치를 0으로 두면 해당 연출이 꺼짐)
+  EFFECTS: {
+    SHAKE_SCALE: 1.0,           // 모든 화면 흔들림 강도 배율
+    HIT_STOP_DEATH: 0.09,       // 장애물 충돌 시 화면 정지 시간 (초)
+    HIT_STOP_NEAR_MISS: 0.035,  // 니어미스 성공 시 화면 정지 시간 (초)
+    HIT_STOP_HOOK: 0.03,        // 갈고리 연결 시 화면 정지 시간 (초)
+    LAND_SHAKE_SPEED: 650,      // 이 낙하 속도 이상으로 착지하면 화면이 살짝 흔들림 (px/s)
+    SPEED_LINES: true,          // 속도감 라인 표시
+    MILESTONE_STEP: 500,        // 이 점수마다 마일스톤 팝업 표시
+  },
+
   // 조작 키 바인딩 설정
   KEYS: {
     JUMP: ['Space', 'ArrowUp'],

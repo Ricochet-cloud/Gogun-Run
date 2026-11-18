@@ -24,6 +24,8 @@ export class UIManager {
     this.onHookAction = options.onHookAction || (() => {});
 
     this.lastDeathCause = 'OBSTACLE';
+    // 직전 플레이의 니어미스 통계 (게임 오버 화면 표시용)
+    this.runStats = { nearMisses: 0, maxCombo: 0 };
 
     // 생성된 DOM 요소 캐시
     this.elements = {};
@@ -182,6 +184,11 @@ export class UIManager {
               <span class="card-label">최고 기록</span>
               <span id="game-over-best-score" class="card-val best-val">000000</span>
             </div>
+            <div class="score-card-divider"></div>
+            <div class="score-card-row">
+              <span class="card-label">니어미스 / 최대 콤보</span>
+              <span id="game-over-near-miss" class="card-val near-miss-val">0회 · x0</span>
+            </div>
           </div>
 
           <div class="panel-buttons">
@@ -279,6 +286,7 @@ export class UIManager {
       gameOverNewRecord: this.overlay.querySelector('#game-over-new-record'),
       gameOverFinalScore: this.overlay.querySelector('#game-over-final-score'),
       gameOverBestScore: this.overlay.querySelector('#game-over-best-score'),
+      gameOverNearMiss: this.overlay.querySelector('#game-over-near-miss'),
       btnGameOverRestart: this.overlay.querySelector('#btn-game-over-restart'),
       btnGameOverTitle: this.overlay.querySelector('#btn-game-over-title'),
       btnGameOverSettings: this.overlay.querySelector('#btn-game-over-settings'),
@@ -548,6 +556,10 @@ export class UIManager {
             this.elements.gameOverCause.style.color = '#94a3b8';
           }
         }
+        if (this.elements.gameOverNearMiss) {
+          this.elements.gameOverNearMiss.textContent =
+            `${this.runStats.nearMisses}회 · x${this.runStats.maxCombo}`;
+        }
         if (this.scoreManager) {
           const finalVal = this.scoreManager.formatScore(this.scoreManager.currentScore);
           const bestVal = this.scoreManager.formatScore(this.scoreManager.bestScore);
@@ -589,6 +601,17 @@ export class UIManager {
    */
   setGameOverCause(cause) {
     this.lastDeathCause = cause;
+  }
+
+  /**
+   * 게임 오버 화면에 표시할 니어미스 통계 설정 (상태를 GAME_OVER 로 바꾸기 전에 호출)
+   * @param {{ nearMisses: number, maxCombo: number }} stats
+   */
+  setRunStats(stats) {
+    this.runStats = {
+      nearMisses: Math.max(0, Math.floor(stats?.nearMisses || 0)),
+      maxCombo: Math.max(0, Math.floor(stats?.maxCombo || 0)),
+    };
   }
 
   /**

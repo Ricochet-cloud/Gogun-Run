@@ -427,6 +427,11 @@
   color: #06d6a0;
 }
 
+.near-miss-val {
+  color: #74c0fc;
+  font-size: 12px;
+}
+
 .score-card-divider {
   height: 1px;
   background: #27304a;

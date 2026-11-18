@@ -16,6 +16,7 @@ export class ScoreManager {
     this.distance = 0;
     this.elapsedTime = 0;
     this.score = 0;
+    this.bonus = 0; // 니어미스 등으로 얻은 보너스 점수 누적
 
     // 최고 기록 및 신기록 달성 여부
     this.highScore = this._loadHighScore();
@@ -30,7 +31,17 @@ export class ScoreManager {
   update(dt, currentSpeed) {
     this.elapsedTime += dt;
     this.distance += currentSpeed * dt;
-    this.score = Math.floor(this.distance * this.pointsPerPixel);
+    this.score = Math.floor(this.distance * this.pointsPerPixel) + this.bonus;
+  }
+
+  /**
+   * 보너스 점수 추가 (니어미스 콤보 등). 거리 점수와 별도로 누적되어 최종 점수에 합산됨
+   * @param {number} points
+   */
+  addBonus(points) {
+    const value = Math.max(0, Math.floor(Number(points) || 0));
+    this.bonus += value;
+    this.score += value;
   }
 
   /**
@@ -79,6 +90,7 @@ export class ScoreManager {
     this.distance = 0;
     this.elapsedTime = 0;
     this.score = 0;
+    this.bonus = 0;
     this.isNewRecord = false;
   }
 
