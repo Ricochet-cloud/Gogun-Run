@@ -3,24 +3,24 @@
   "characters": [
     {
       "id": "tanjiro",
-      "name": "탄지로",
+      "name": "기본캐릭터",
       "desc": "기본 캐릭터 · 균형형",
-      "src": "assets/player/tanjiro_sprite_448x64.png",
+      "src": "assets/player/characters/tanjiro_448x64.png",
       "price": 0,
       "spriteOverrides": {}
     },
     {
       "id": "placeholder_azure",
-      "name": "청색 검사 (임시)",
-      "desc": "임시 캐릭터 · 새 시트로 교체하세요",
+      "name": "가면 아저씨",
+      "desc": "이상한 가면을쓰고 돌아다니는 아저씨...",
       "src": "assets/player/characters/placeholder_azure_448x64.png",
       "price": 300,
       "spriteOverrides": {}
     },
     {
       "id": "placeholder_gold",
-      "name": "황금 검사 (임시)",
-      "desc": "임시 캐릭터 · 새 시트로 교체하세요",
+      "name": "여고등생",
+      "desc": "학교에 늦었어!!",
       "src": "assets/player/characters/placeholder_gold_448x64.png",
       "price": 500,
       "spriteOverrides": {}
