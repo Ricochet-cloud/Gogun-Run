@@ -362,7 +362,11 @@ export class Player {
       const dx = Math.round(drawX + (this.assetConfig.OFFSET_X || 0));
       const dy = Math.round(drawY + (this.assetConfig.OFFSET_Y || 0));
 
-      ctx.drawImage(img, sx, sy, fw, fh, dx, dy, rw, rh);
+      if (this.rotationAngle !== 0) {
+        this._drawRotatedSprite(ctx, img, sx, sy, fw, fh, dx, dy, rw, rh);
+      } else {
+        ctx.drawImage(img, sx, sy, fw, fh, dx, dy, rw, rh);
+      }
 
       // STEP 6 디버그: 플레이어 경계선 그리기 (히트박스 확인)
       if (window.__DEBUG_SHOW_BOUNDS__) {
@@ -380,6 +384,33 @@ export class Player {
     } else {
       this._renderFallbackAt(ctx, drawX, drawY);
     }
+  }
+
+  /**
+   * 회전 중 스프라이트 그리기.
+   * 도트 이미지를 최근접 보간(smoothing off)으로 바로 회전시키면 픽셀이 찢어져 깨져 보이므로,
+   * 먼저 4배로 또렷하게 키운 임시 캔버스에 그린 뒤 그것을 회전/축소해서 그린다.
+   */
+  _drawRotatedSprite(ctx, img, sx, sy, fw, fh, dx, dy, rw, rh) {
+    const SS = 4;
+    if (!this._rotCanvas) {
+      this._rotCanvas = document.createElement('canvas');
+      this._rotCtx = this._rotCanvas.getContext('2d');
+    }
+    const c = this._rotCanvas;
+    if (c.width !== fw * SS || c.height !== fh * SS) {
+      c.width = fw * SS;
+      c.height = fh * SS;
+    }
+    const oc = this._rotCtx;
+    oc.clearRect(0, 0, c.width, c.height);
+    oc.imageSmoothingEnabled = false;
+    oc.drawImage(img, sx, sy, fw, fh, 0, 0, c.width, c.height);
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(c, 0, 0, c.width, c.height, dx, dy, rw, rh);
+    ctx.imageSmoothingEnabled = false;
   }
 
   /**
