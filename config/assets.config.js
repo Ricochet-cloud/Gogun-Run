@@ -7,13 +7,13 @@
 export const ASSETS_CONFIG = Object.freeze({
   // 플레이어 스프라이트 시트 및 애니메이션 설정
   PLAYER: {
-    SRC: 'assets/player/tanjiro_sprite_336x48.png', // 이미지 파일 경로 (SVG 또는 PNG)
-    FRAME_WIDTH: 48,                            // 개별 프레임 가로폭 (px)
-    FRAME_HEIGHT: 48,                           // 개별 프레임 세로높이 (px)
-    RENDER_WIDTH: 64,                           // 캔버스에 렌더링될 실제 가로폭 (STEP 6 확대: 48→64)
-    RENDER_HEIGHT: 64,                          // 캔버스에 렌더링될 실제 세로높이 (STEP 6 확대: 48→64)
+    SRC: 'assets/player/tanjiro_sprite_448x64.png', // 이미지 파일 경로 (7프레임 × 64px, 기존 336x48 시트에서 변환)
+    FRAME_WIDTH: 64,                            // 개별 프레임 가로폭 (px) — RENDER_WIDTH와 같게 두면 확대/축소 없이 1:1로 그려져 도트가 깨지지 않음
+    FRAME_HEIGHT: 64,                           // 개별 프레임 세로높이 (px)
+    RENDER_WIDTH: 64,                           // 캔버스에 렌더링될 실제 가로폭 (프레임 크기와 동일해야 함)
+    RENDER_HEIGHT: 64,                          // 캔버스에 렌더링될 실제 세로높이 (프레임 크기와 동일해야 함)
     OFFSET_X: -8,                               // 충돌 히트박스 기준 시각적 X 오프셋 (보정: -6→-8)
-    OFFSET_Y: -8,                               // 충돌 히트박스 기준 시각적 Y 오프셋 (발 정렬: 0→-8)
+    OFFSET_Y: 2,                                // 충돌 히트박스 기준 시각적 Y 오프셋 (발 정렬: 새 시트는 발이 프레임 61행 → 바닥(290)에 닿도록 +2)
     ANIMATIONS: {
       RUN: {
         FRAMES: [0, 1, 2, 3],                   // 달리기 프레임 인덱스 목록

@@ -272,11 +272,29 @@ export class Renderer {
         if (img) {
           const layerW = layer.WIDTH || this.logicalWidth;
           const layerH = layer.HEIGHT || this.logicalHeight;
-          const scrollX = Math.floor(nextOffset % layerW);
+          const layerY = layer.Y || 0;
 
-          // 이음새 없이 연속 타일링
-          this.ctx.drawImage(img, -scrollX, layer.Y || 0, layerW, layerH);
-          this.ctx.drawImage(img, -scrollX + layerW, layer.Y || 0, layerW, layerH);
+          // 미러 타일링: 이미지가 좌우로 이어지는(시임리스) 구조가 아니므로,
+          // 홀수 번째 타일을 좌우 반전해서 붙이면 맞닿는 가장자리가 항상 같은 픽셀이 되어 이음새가 사라짐.
+          // 반복 주기는 (원본 + 반전본) = layerW * 2
+          const period = layerW * 2;
+          const scrollX = Math.floor(nextOffset % period);
+
+          for (let k = 0; k < 4; k++) {
+            const tileX = -scrollX + k * layerW;
+            // 화면 밖 타일은 그리지 않음
+            if (tileX >= this.logicalWidth || tileX + layerW <= 0) continue;
+
+            if (k % 2 === 0) {
+              this.ctx.drawImage(img, tileX, layerY, layerW, layerH);
+            } else {
+              this.ctx.save();
+              this.ctx.translate(tileX + layerW, layerY);
+              this.ctx.scale(-1, 1);
+              this.ctx.drawImage(img, 0, 0, layerW, layerH);
+              this.ctx.restore();
+            }
+          }
 
           if (layer.ID === 'FAR') {
             farRendered = true;
