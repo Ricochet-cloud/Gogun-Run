@@ -1,4 +1,5 @@
 import { GameState } from '../game/GameState.js';
+import { ShopUI } from './ShopUI.js';
 
 /**
  * UI 관리자 모듈 (UIManager)
@@ -23,11 +24,13 @@ export class UIManager {
     this.onJumpAction = options.onJumpAction || (() => {});
     this.onHookAction = options.onHookAction || (() => {});
     this.characters = options.characters || null;
+    this.shop = options.shop || null;
     this.onSelectCharacter = options.onSelectCharacter || (() => {});
 
     this.lastDeathCause = 'OBSTACLE';
     // 직전 플레이의 니어미스 통계 (게임 오버 화면 표시용)
-    this.runStats = { nearMisses: 0, maxCombo: 0 };
+    this.runStats = { nearMisses: 0, maxCombo: 0, coins: 0 };
+    this._lastCoinText = '';
 
     // 생성된 DOM 요소 캐시
     this.elements = {};
@@ -77,6 +80,10 @@ export class UIManager {
             <span class="hud-label">BEST</span>
             <span id="hud-best" class="hud-value hud-best-val">000000</span>
           </div>
+          <div class="hud-stat-box coin-box">
+            <span class="hud-label">COIN</span>
+            <span id="hud-coins" class="hud-value hud-coin-val">0</span>
+          </div>
           <div class="hud-stat-box speed-box">
             <span class="hud-label">SPEED</span>
             <span id="hud-speed" class="hud-value hud-speed-val">260 px/s</span>
@@ -110,6 +117,10 @@ export class UIManager {
               <span class="stat-pill-label">🏆 최고 기록</span>
               <span id="ready-best-score" class="stat-pill-value">000000</span>
             </div>
+            <div class="stat-pill" style="margin-top: 6px;">
+              <span class="stat-pill-label">🪙 보유 코인</span>
+              <span id="ready-coins" class="stat-pill-value coin-val">0</span>
+            </div>
           </div>
 
           <!-- 캐릭터 선택 -->
@@ -127,6 +138,9 @@ export class UIManager {
           <div class="panel-buttons">
             <button id="btn-start-game" class="ui-btn ui-btn-primary ui-interactive">
               게임 시작 [START]
+            </button>
+            <button id="btn-ready-shop" class="ui-btn ui-btn-secondary ui-interactive">
+              🛒 상점
             </button>
             <button id="btn-ready-settings" class="ui-btn ui-btn-secondary ui-interactive">
               ⚙ 환경 설정
@@ -203,6 +217,11 @@ export class UIManager {
               <span class="card-label">니어미스 / 최대 콤보</span>
               <span id="game-over-near-miss" class="card-val near-miss-val">0회 · x0</span>
             </div>
+            <div class="score-card-divider"></div>
+            <div class="score-card-row">
+              <span class="card-label">이번 판 획득 코인</span>
+              <span id="game-over-coins" class="card-val coin-val">0</span>
+            </div>
           </div>
 
           <div class="panel-buttons">
@@ -212,9 +231,32 @@ export class UIManager {
             <button id="btn-game-over-title" class="ui-btn ui-btn-secondary ui-interactive">
               시작 화면으로 [TITLE]
             </button>
+            <button id="btn-game-over-shop" class="ui-btn ui-btn-secondary ui-interactive">
+              🛒 상점
+            </button>
             <button id="btn-game-over-settings" class="ui-btn ui-btn-subtle ui-interactive">
               ⚙ 설정
             </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4-1. 상점 모달 (SHOP) -->
+      <div id="modal-shop" class="ui-modal-wrapper" style="display: none;">
+        <div class="ui-panel shop-panel">
+          <div class="shop-head">
+            <h2 class="ui-title title-shop">🛒 상점</h2>
+            <div class="shop-wallet">🪙 <span id="shop-coins">0</span></div>
+          </div>
+          <div class="shop-tabs">
+            <button class="shop-tab ui-interactive" data-tab="character">캐릭터</button>
+            <button class="shop-tab ui-interactive" data-tab="cosmetic">꾸미기</button>
+            <button class="shop-tab ui-interactive" data-tab="pet">펫</button>
+          </div>
+          <div id="shop-msg" class="shop-msg"></div>
+          <div id="shop-grid" class="shop-grid"></div>
+          <div class="panel-buttons">
+            <button id="btn-close-shop" class="ui-btn ui-btn-primary ui-interactive">닫기 [CLOSE]</button>
           </div>
         </div>
       </div>
@@ -277,6 +319,12 @@ export class UIManager {
       hudScore: this.overlay.querySelector('#hud-score'),
       hudBest: this.overlay.querySelector('#hud-best'),
       hudSpeed: this.overlay.querySelector('#hud-speed'),
+      hudCoins: this.overlay.querySelector('#hud-coins'),
+      readyCoins: this.overlay.querySelector('#ready-coins'),
+      gameOverCoins: this.overlay.querySelector('#game-over-coins'),
+      btnReadyShop: this.overlay.querySelector('#btn-ready-shop'),
+      btnGameOverShop: this.overlay.querySelector('#btn-game-over-shop'),
+      modalShop: this.overlay.querySelector('#modal-shop'),
       btnHudPause: this.overlay.querySelector('#btn-hud-pause'),
       btnHudSound: this.overlay.querySelector('#btn-hud-sound'),
       btnTouchJump: this.overlay.querySelector('#btn-touch-jump'),
@@ -377,13 +425,27 @@ export class UIManager {
       this.onStart();
     });
 
+    // 1-0. 상점 (타이틀 / 게임 오버 화면에서 열기)
+    if (this.shop && this.elements.modalShop) {
+      this.shopUI = new ShopUI(this.elements.modalShop, {
+        shop: this.shop,
+        characters: this.characters,
+        onSelectCharacter: (id) => this.onSelectCharacter(id),
+        onClose: () => {
+          this._renderCharacterSelect();
+          this._refreshReadyCoins();
+        },
+      });
+    }
+    this.elements.btnReadyShop?.addEventListener('click', () => this.openShop());
+    this.elements.btnGameOverShop?.addEventListener('click', () => this.openShop());
+
     // 1-1. 캐릭터 선택 (버튼 / 좌우 방향키)
     this.elements.btnCharPrev?.addEventListener('click', () => this._cycleCharacter(-1));
     this.elements.btnCharNext?.addEventListener('click', () => this._cycleCharacter(1));
     this._onCharKeyDown = (e) => {
       if (!this.gameState.is(GameState.READY)) return;
-      const settingsOpen = this.elements.modalSettings && this.elements.modalSettings.style.display !== 'none';
-      if (settingsOpen) return;
+      if (this.isModalOpen()) return;
       if (e.code === 'ArrowLeft') this._cycleCharacter(-1);
       else if (e.code === 'ArrowRight') this._cycleCharacter(1);
     };
@@ -563,6 +625,7 @@ export class UIManager {
         if (this.scoreManager) {
           this.elements.readyBestScore.textContent = this.scoreManager.formatScore(this.scoreManager.bestScore);
         }
+        this._refreshReadyCoins();
         break;
 
       case GameState.PLAYING:
@@ -593,6 +656,9 @@ export class UIManager {
         if (this.elements.gameOverNearMiss) {
           this.elements.gameOverNearMiss.textContent =
             `${this.runStats.nearMisses}회 · x${this.runStats.maxCombo}`;
+        }
+        if (this.elements.gameOverCoins) {
+          this.elements.gameOverCoins.textContent = `+${this.runStats.coins}`;
         }
         if (this.scoreManager) {
           const finalVal = this.scoreManager.formatScore(this.scoreManager.currentScore);
@@ -645,7 +711,33 @@ export class UIManager {
     this.runStats = {
       nearMisses: Math.max(0, Math.floor(stats?.nearMisses || 0)),
       maxCombo: Math.max(0, Math.floor(stats?.maxCombo || 0)),
+      coins: Math.max(0, Math.floor(stats?.coins || 0)),
     };
+  }
+
+  /** 설정/상점 모달이 열려 있는지 (열려 있으면 게임 입력을 막기 위해 사용) */
+  isModalOpen() {
+    const open = (el) => !!el && el.style.display !== 'none';
+    return open(this.elements.modalSettings) || open(this.elements.modalShop);
+  }
+
+  openShop() {
+    this.shopUI?.open();
+  }
+
+  _refreshReadyCoins() {
+    if (this.shop && this.elements.readyCoins) {
+      this.elements.readyCoins.textContent = this.shop.coins.toLocaleString('ko-KR');
+    }
+  }
+
+  /** HUD 코인 표시 (값이 바뀔 때만 DOM 갱신) */
+  updateCoins(runCoins, wallet) {
+    const text = String(runCoins);
+    if (text !== this._lastCoinText && this.elements.hudCoins) {
+      this._lastCoinText = text;
+      this.elements.hudCoins.textContent = text;
+    }
   }
 
   /** 캐릭터 목록이 바뀐 뒤(JSON 로드 등) 선택 UI 갱신 */
@@ -658,7 +750,7 @@ export class UIManager {
    * @param {number} step +1 다음 / -1 이전
    */
   _cycleCharacter(step) {
-    if (!this.characters || this.characters.list.length < 2) return;
+    if (!this.characters || this.characters.ownedList().length < 2) return;
     const ch = this.characters.cycle(step);
     if (ch) this.onSelectCharacter(ch.ID);
     this._renderCharacterSelect();
@@ -671,7 +763,7 @@ export class UIManager {
     const el = this.elements;
     if (!this.characters || !el.charSelect) return;
 
-    const list = this.characters.list;
+    const list = this.characters.ownedList();
     el.charSelect.style.display = 'flex';
     const multi = list.length > 1;
     el.btnCharPrev.style.visibility = multi ? 'visible' : 'hidden';
@@ -735,6 +827,7 @@ export class UIManager {
     if (this.overlay && this.overlay.parentNode) {
       this.overlay.parentNode.removeChild(this.overlay);
     }
+    if (this.shopUI) this.shopUI.destroy();
     if (this._onCharKeyDown && typeof window !== 'undefined') {
       window.removeEventListener('keydown', this._onCharKeyDown);
     }

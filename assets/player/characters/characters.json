@@ -14,7 +14,7 @@
       "name": "청색 검사 (임시)",
       "desc": "임시 캐릭터 · 새 시트로 교체하세요",
       "src": "assets/player/characters/placeholder_azure_448x64.png",
-      "price": 0,
+      "price": 300,
       "spriteOverrides": {}
     },
     {
@@ -22,7 +22,7 @@
       "name": "황금 검사 (임시)",
       "desc": "임시 캐릭터 · 새 시트로 교체하세요",
       "src": "assets/player/characters/placeholder_gold_448x64.png",
-      "price": 0,
+      "price": 500,
       "spriteOverrides": {}
     }
   ]

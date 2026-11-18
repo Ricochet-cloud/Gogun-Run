@@ -388,6 +388,26 @@ export class AudioManager {
           break;
         }
 
+        case 'COIN': {
+          // 짧고 밝은 두 음 (연속으로 먹을수록 음정이 올라감)
+          const step = Math.min(options.chain ?? 0, 7);
+          const root = 988 * Math.pow(2, (step * 2) / 12);
+          [root, root * 1.5].forEach((f, k) => {
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(f, now + k * 0.05);
+            gain.gain.setValueAtTime(0.0001, now + k * 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.6, now + k * 0.05 + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + k * 0.05 + 0.1);
+            osc.connect(gain);
+            gain.connect(masterGain);
+            osc.start(now + k * 0.05);
+            osc.stop(now + k * 0.05 + 0.11);
+          });
+          break;
+        }
+
         case 'NEAR_MISS': {
           // 니어미스 "띠링": 콤보가 쌓일수록 음이 한 음씩 올라감 (최대 8단계), 퍼펙트는 3음
           const step = Math.min(Math.max((options.combo || 1) - 1, 0), 8);

@@ -1,0 +1,186 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "trail_default",
+      "type": "trail",
+      "name": "기본 먼지",
+      "desc": "회색 먼지",
+      "price": 0,
+      "colors": [
+        "#cbd5e1",
+        "#94a3b8"
+      ],
+      "runColors": [
+        "#94a3b8",
+        "#64748b"
+      ]
+    },
+    {
+      "id": "trail_sakura",
+      "type": "trail",
+      "name": "벚꽃 먼지",
+      "desc": "분홍빛 꽃잎이 흩날려요",
+      "price": 150,
+      "colors": [
+        "#ffc2d1",
+        "#ff8fab"
+      ],
+      "runColors": [
+        "#ffb3c6",
+        "#ff8fab"
+      ]
+    },
+    {
+      "id": "trail_flame",
+      "type": "trail",
+      "name": "불꽃 자국",
+      "desc": "발밑에서 불씨가 튀어요",
+      "price": 200,
+      "colors": [
+        "#ffd166",
+        "#ff7b00"
+      ],
+      "runColors": [
+        "#ff9f1c",
+        "#e85d04"
+      ]
+    },
+    {
+      "id": "trail_frost",
+      "type": "trail",
+      "name": "서리 먼지",
+      "desc": "차가운 얼음 가루",
+      "price": 200,
+      "colors": [
+        "#e0fbfc",
+        "#74c0fc"
+      ],
+      "runColors": [
+        "#a5d8ff",
+        "#74c0fc"
+      ]
+    },
+    {
+      "id": "trail_thunder",
+      "type": "trail",
+      "name": "번개 자국",
+      "desc": "노란 스파크가 튀어요",
+      "price": 250,
+      "colors": [
+        "#fff3b0",
+        "#ffd60a"
+      ],
+      "runColors": [
+        "#ffe066",
+        "#fcc419"
+      ]
+    },
+    {
+      "id": "rope_default",
+      "type": "rope",
+      "name": "기본 와이어",
+      "desc": "청록빛 강철 와이어",
+      "price": 0,
+      "glow": "rgba(6, 214, 160, 0.45)",
+      "core": "#ffffff",
+      "tip": "#ffd166"
+    },
+    {
+      "id": "rope_crimson",
+      "type": "rope",
+      "name": "진홍 와이어",
+      "desc": "붉게 타오르는 와이어",
+      "price": 180,
+      "glow": "rgba(230, 57, 70, 0.5)",
+      "core": "#ffd6d9",
+      "tip": "#ff4d6d"
+    },
+    {
+      "id": "rope_azure",
+      "type": "rope",
+      "name": "물결 와이어",
+      "desc": "푸른 물빛 와이어",
+      "price": 180,
+      "glow": "rgba(76, 201, 240, 0.5)",
+      "core": "#e0f7ff",
+      "tip": "#4895ef"
+    },
+    {
+      "id": "rope_gold",
+      "type": "rope",
+      "name": "황금 와이어",
+      "desc": "반짝이는 금빛 와이어",
+      "price": 300,
+      "glow": "rgba(255, 209, 102, 0.55)",
+      "core": "#fff7d6",
+      "tip": "#ffffff"
+    },
+    {
+      "id": "effect_default",
+      "type": "effect",
+      "name": "기본 연출",
+      "desc": "노랑 · 초록 · 하늘",
+      "price": 0,
+      "near": "#ffd166",
+      "perfect": "#06d6a0",
+      "ledge": "#74c0fc"
+    },
+    {
+      "id": "effect_sakura",
+      "type": "effect",
+      "name": "벚꽃 연출",
+      "desc": "분홍빛 니어미스",
+      "price": 220,
+      "near": "#ffc2d1",
+      "perfect": "#ff4d8d",
+      "ledge": "#ffe3ec"
+    },
+    {
+      "id": "effect_flame",
+      "type": "effect",
+      "name": "화염 연출",
+      "desc": "타오르는 니어미스",
+      "price": 220,
+      "near": "#ff9f1c",
+      "perfect": "#ff4d00",
+      "ledge": "#ffd166"
+    },
+    {
+      "id": "effect_thunder",
+      "type": "effect",
+      "name": "번개 연출",
+      "desc": "짜릿한 노란 · 보라",
+      "price": 260,
+      "near": "#ffe066",
+      "perfect": "#b197fc",
+      "ledge": "#fff3bf"
+    },
+    {
+      "id": "pet_wisp_blue",
+      "type": "pet",
+      "name": "푸른 도깨비불",
+      "desc": "따라다니는 푸른 불꽃 (임시 이미지)",
+      "price": 400,
+      "src": "assets/pets/wisp_blue_128x32.png",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "frames": 4,
+      "fps": 8,
+      "magnet": 0
+    },
+    {
+      "id": "pet_wisp_gold",
+      "type": "pet",
+      "name": "황금 도깨비불",
+      "desc": "근처 코인을 끌어당겨요 (임시 이미지)",
+      "price": 900,
+      "src": "assets/pets/wisp_gold_128x32.png",
+      "frameWidth": 32,
+      "frameHeight": 32,
+      "frames": 4,
+      "fps": 8,
+      "magnet": 70
+    }
+  ]
+}

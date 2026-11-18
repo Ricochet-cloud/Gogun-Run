@@ -15,6 +15,9 @@ import { HookSystem } from './HookSystem.js';
 import { EffectsSystem } from './EffectsSystem.js';
 import { NearMissSystem } from './NearMissSystem.js';
 import { CharacterManager } from '../systems/CharacterManager.js';
+import { ShopManager } from '../systems/ShopManager.js';
+import { CoinSystem } from './CoinSystem.js';
+import { PetCompanion } from './PetCompanion.js';
 
 /**
  * Gogun Run 메인 게임 엔진 (STEP 5)
@@ -45,6 +48,10 @@ export class Game {
     // 4-1. 타격감 연출 및 니어미스 콤보 시스템 초기화
     this.effects = new EffectsSystem(this.config, this.renderer);
     this.nearMiss = new NearMissSystem(this.config);
+    this.coins = new CoinSystem(this.config);
+    this.pet = new PetCompanion();
+    this._coinChain = 0;
+    this._coinChainTimer = 0;
     this._nextMilestone = this.config.EFFECTS?.MILESTONE_STEP || 0;
 
     // 5. 지형 및 낭떠러지 관리자 초기화 (STEP 5 & 6)
@@ -58,10 +65,17 @@ export class Game {
       if (gap.isChasm && this.hookSystem) {
         this.hookSystem.ensureAnchorOverGap(gap.midX);
       }
+      this.coins.onGapCreated(gap);
     };
+    this.terrainManager.onPlatformCreated = (platform) => this.coins.onPlatformCreated(platform);
+    // 훅 연결 후 지형을 다시 만들어 첫 화면부터 코인이 배치되게 함
+    this.terrainManager.reset();
 
     // 7. 캐릭터 선택 관리자 + 플레이어 인스턴스 초기화 (에셋 설정 전달)
     this.characters = new CharacterManager(this.assetsConfig.PLAYER);
+    // 상점 (지갑 / 보유 / 장착). 캐릭터 보유 여부는 상점이 판단한다
+    this.shop = new ShopManager(this.characters);
+    this.characters.isOwned = (ch) => this.shop.ownsCharacter(ch);
     this.player = new Player(
       this.config.PLAYER,
       this.config.PHYSICS,
@@ -107,6 +121,8 @@ export class Game {
       this.assetsConfig.OBSTACLES
     );
 
+    this.obstacleSpawner.onSpawn = (obstacle) => this.coins.onObstacleSpawned(obstacle);
+
     // 11. UI 관리자 초기화 (뷰포트 부모 요소에 UI 오버레이 마운트)
     const uiMountPoint = this.canvas.parentElement || document.getElementById('game-container');
     this.uiManager = new UIManager(uiMountPoint, {
@@ -120,6 +136,7 @@ export class Game {
       onJumpAction: () => this.handleJump(),
       onHookAction: () => this.handleHook(),
       characters: this.characters,
+      shop: this.shop,
       onSelectCharacter: (id) => this.selectCharacter(id),
     });
 
@@ -144,15 +161,18 @@ export class Game {
   async init() {
     // 0. 캐릭터 목록(JSON) 로드 후 현재 선택 캐릭터를 플레이어에 반영
     await this.characters.loadManifest();
-    this.player.setCharacter(
-      CharacterManager.spriteKey(this.characters.getSelected().ID),
-      this.characters.getPlayerAssetConfig()
-    );
+    await this.shop.loadCatalog();
+    this.applyEquipment();
+    this.shop.onChange(() => this.applyEquipment());
     this.uiManager.refreshCharacterSelect();
+    // 지갑은 탭을 닫거나 숨길 때도 저장
+    this._onPageHide = () => this.shop.save();
+    window.addEventListener('pagehide', this._onPageHide);
 
     // 1. 에셋 매니페스트 구성 및 비동기 일괄 로드
     const manifest = [
       ...this.characters.getManifest(),
+      ...this.shop.itemsOfType('pet').map((p) => ({ key: PetCompanion.spriteKey(p.id), src: p.src })),
       { key: 'ground', src: this.assetsConfig.GROUND.SRC },
     ];
 
@@ -221,6 +241,17 @@ export class Game {
   }
 
   /**
+   * 장착 상태(캐릭터 / 꾸미기 / 펫)를 게임 객체에 반영
+   */
+  applyEquipment() {
+    const ch = this.characters.getSelected();
+    this.player.setCharacter(CharacterManager.spriteKey(ch.ID), this.characters.getPlayerAssetConfig(ch.ID));
+    this.effects.setCosmetics({ trail: this.shop.getEquipped('trail'), effect: this.shop.getEquipped('effect') });
+    this.renderer.ropeStyle = this.shop.getEquipped('rope');
+    this.pet.setPet(this.shop.getEquipped('pet'));
+  }
+
+  /**
    * 캐릭터 변경 (타이틀 화면에서 호출, 선택은 localStorage에 저장됨)
    * @param {string} id 캐릭터 ID
    */
@@ -234,6 +265,8 @@ export class Game {
    * 점프 / 시작 / 재시작 단축키 액션 처리 (STEP 6 입력 가드 및 디바운스)
    */
   handleJump() {
+    // 설정/상점 창이 열려 있으면 스페이스/엔터가 게임 시작·재시작으로 새지 않게 막는다
+    if (this.uiManager.isModalOpen()) return;
     if (this.gameState.is(GameState.PLAYING)) {
       // 갈고리에 매달려 있는 상태에서 점프를 누르면 갈고리 해제 및 관성 점프로 직관적 연계
       if (this.player.state === PlayerState.HOOKED) {
@@ -306,6 +339,7 @@ export class Game {
   pauseGame() {
     if (!this.gameState.is(GameState.PLAYING)) return;
     this.gameState.setState(GameState.PAUSED);
+    this.shop.save();
     this.audioManager.pauseBgm();
     this.inputManager.setEnabled(false);
   }
@@ -328,6 +362,8 @@ export class Game {
     this.currentSpeed = this.config.WORLD.BASE_SPEED;
     this.groundScrollOffset = 0;
     this.player.reset();
+    this.coins.reset();
+    this._coinChain = 0;
     this.terrainManager.reset();
     this.hookSystem.reset();
     this.obstacleSpawner.reset(this.currentSpeed);
@@ -347,6 +383,8 @@ export class Game {
     this.currentSpeed = this.config.WORLD.BASE_SPEED;
     this.groundScrollOffset = 0;
     this.player.reset();
+    this.coins.reset();
+    this._coinChain = 0;
     this.terrainManager.reset();
     this.hookSystem.reset();
     this.obstacleSpawner.reset(this.currentSpeed);
@@ -432,6 +470,18 @@ export class Game {
       // 4. 플레이어 물리 및 플랫폼 착지 업데이트 (STEP 5)
       this.player.update(dt, this.terrainManager.getPlatforms());
 
+      // 4-1. 코인 이동/획득 (펫 자석 포함)
+      this._coinChainTimer -= dt;
+      if (this._coinChainTimer <= 0) this._coinChain = 0;
+      const picked = this.coins.update(dt, this.currentSpeed, this.player, this.pet.getMagnet());
+      for (const c of picked) {
+        this.shop.addCoins(1);
+        this.effects.coinPickup(c.x, c.y, this._coinChain);
+        this.audioManager.playSfx('COIN', { chain: this._coinChain });
+        this._coinChain++;
+        this._coinChainTimer = 0.6;
+      }
+
       // 5. 자동 달리기 바닥 스크롤 오프셋 누적
       this.groundScrollOffset += this.currentSpeed * dt;
 
@@ -472,12 +522,16 @@ export class Game {
       }
     }
 
+    // 펫은 모든 화면 상태에서 플레이어를 따라다님
+    this.pet.update(dt, this.player);
+
     // 실시간 HUD 수치 업데이트
     this.uiManager.updateHUD(
       this.scoreManager.currentScore,
       this.scoreManager.bestScore,
       this.currentSpeed
     );
+    this.uiManager.updateCoins(this.coins.runCollected, this.shop.coins);
   }
 
   /**
@@ -497,7 +551,9 @@ export class Game {
     this.uiManager.setRunStats({
       nearMisses: this.nearMiss.totalCount,
       maxCombo: this.nearMiss.maxCombo,
+      coins: this.coins.runCollected,
     });
+    this.shop.save(); // 이번 판에서 모은 코인 저장
 
     this.gameState.setState(GameState.GAME_OVER);
     this.player.die();
@@ -570,8 +626,14 @@ export class Game {
     }
     this.effects.drawBehind(this.renderer.ctx);
 
+    // 5-2. 코인 (타이틀 화면에서는 숨김)
+    if (!this.gameState.is(GameState.READY)) this.coins.render(this.renderer.ctx);
+
     // 6. 장애물 에셋 렌더링
     this.obstacleSpawner.render(this.renderer.ctx);
+
+    // 6-1. 펫 (플레이어 뒤)
+    this.pet.render(this.renderer.ctx);
 
     // 7. 플레이어 스프라이트 렌더링 (공중제비 회전 지원)
     this.player.render(this.renderer.ctx);

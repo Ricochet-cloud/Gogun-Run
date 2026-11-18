@@ -119,6 +119,17 @@ export const GAME_CONFIG = Object.freeze({
   },
 
   // 타격감 연출 설정 (수치를 0으로 두면 해당 연출이 꺼짐)
+  // 코인 (달리는 중 줍기 → 상점 재화)
+  COINS: {
+    RADIUS: 8,
+    PICKUP_PADDING: 6,
+    PLATFORM_LINE_CHANCE: 0.55,
+    GAP_ARC_CHANCE: 0.7,
+    OBSTACLE_ARC_CHANCE: 0.85,
+    GROUND_HEIGHT: 26,
+    MAGNET_SPEED: 360,
+  },
+
   EFFECTS: {
     SHAKE_SCALE: 1.0,           // 모든 화면 흔들림 강도 배율
     HIT_STOP_DEATH: 0.09,       // 장애물 충돌 시 화면 정지 시간 (초)

@@ -63,6 +63,44 @@ export class EffectsSystem {
       });
     }
     this.speedIntensity = 0;
+
+    // 꾸미기 테마 (상점에서 장착한 먼지 색 / 니어미스 연출 색)
+    this.theme = {
+      dust: ['#cbd5e1', '#94a3b8'],
+      run: ['#94a3b8', '#64748b'],
+      kinds: { NEAR: { ...KIND_STYLE.NEAR }, PERFECT: { ...KIND_STYLE.PERFECT }, LEDGE: { ...KIND_STYLE.LEDGE } },
+    };
+  }
+
+  /**
+   * 장착한 꾸미기 적용 (null 이면 해당 항목은 기본값)
+   * @param {{ trail?: Object|null, effect?: Object|null }} cosmetics ShopManager 아이템 객체
+   */
+  setCosmetics({ trail = null, effect = null } = {}) {
+    this.theme.dust = trail?.colors?.length ? trail.colors : ['#cbd5e1', '#94a3b8'];
+    this.theme.run = trail?.runColors?.length ? trail.runColors : ['#94a3b8', '#64748b'];
+    this.theme.kinds.NEAR.color = effect?.near || KIND_STYLE.NEAR.color;
+    this.theme.kinds.PERFECT.color = effect?.perfect || KIND_STYLE.PERFECT.color;
+    this.theme.kinds.LEDGE.color = effect?.ledge || KIND_STYLE.LEDGE.color;
+  }
+
+  _pickColor(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  /**
+   * 코인 획득 연출 (작은 불꽃 + 팝업)
+   * @param {number} chain 짧은 시간 안에 연속으로 먹은 개수
+   */
+  coinPickup(x, y, chain = 0) {
+    for (let i = 0; i < 4; i++) {
+      const a = Math.random() * Math.PI * 2;
+      this._push({
+        x, y, vx: Math.cos(a) * (40 + Math.random() * 50), vy: Math.sin(a) * (40 + Math.random() * 50) - 20,
+        size: 2, color: Math.random() < 0.6 ? '#ffd166' : '#fff1b8', life: 0.22, maxLife: 0.22, drag: 4,
+      });
+    }
+    this.popup(chain >= 4 ? `+1 x${chain + 1}` : '+1', x, y - 8, '#ffd166', 9, 0.5, -34);
   }
 
   /**
@@ -137,7 +175,7 @@ export class EffectsSystem {
         vx: -(30 + Math.random() * 60),
         vy: -(8 + Math.random() * 26),
         size: Math.random() < 0.5 ? 2 : 3,
-        color: Math.random() < 0.5 ? '#cbd5e1' : '#94a3b8',
+        color: this._pickColor(this.theme.dust),
         life: 0.22,
         maxLife: 0.22,
         gravity: 120,
@@ -159,7 +197,7 @@ export class EffectsSystem {
         vx: dir * (40 + Math.random() * 100),
         vy: -(20 + Math.random() * 55),
         size: Math.random() < 0.5 ? 2 : 3,
-        color: Math.random() < 0.5 ? '#cbd5e1' : '#94a3b8',
+        color: this._pickColor(this.theme.dust),
         life: 0.24,
         maxLife: 0.24,
         gravity: 260,
@@ -209,7 +247,7 @@ export class EffectsSystem {
    * @param {number} [sy] 불꽃/링 기준 Y (기본값: 팝업 위치)
    */
   nearMissBurst(kind, x, y, info, sx = x, sy = y) {
-    const style = KIND_STYLE[kind] || KIND_STYLE.NEAR;
+    const style = this.theme.kinds[kind] || this.theme.kinds.NEAR;
     const sparks = kind === 'PERFECT' ? 12 : 8;
     for (let i = 0; i < sparks; i++) {
       const angle = (i / sparks) * Math.PI * 2 + Math.random() * 0.4;
@@ -365,7 +403,7 @@ export class EffectsSystem {
         vx: -(speed * 0.3 + Math.random() * 40),
         vy: -(8 + Math.random() * 24),
         size: 2,
-        color: Math.random() < 0.5 ? '#94a3b8' : '#64748b',
+        color: this._pickColor(this.theme.run),
         life: 0.2 + Math.random() * 0.12,
         maxLife: 0.32,
         gravity: 90,

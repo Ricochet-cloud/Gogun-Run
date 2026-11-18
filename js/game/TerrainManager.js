@@ -28,6 +28,8 @@ export class TerrainManager {
 
     /** @type {Function|null} 낭떠러지 생성 시 호출되는 훅 */
     this.onGapCreated = null;
+    /** @type {Function|null} 새 플랫폼 생성 시 호출되는 훅 (코인 배치 등) */
+    this.onPlatformCreated = null;
 
     /** @type {Platform[]} */
     this.platforms = [];
@@ -127,6 +129,10 @@ export class TerrainManager {
         midX: lastEdge + gapWidth * 0.45,
         isChasm: gapWidth >= 170,
       });
+    }
+
+    if (typeof this.onPlatformCreated === 'function') {
+      this.onPlatformCreated(platform);
     }
   }
 

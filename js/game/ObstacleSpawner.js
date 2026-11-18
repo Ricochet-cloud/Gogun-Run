@@ -23,6 +23,9 @@ export class ObstacleSpawner {
     /** @type {Obstacle[]} */
     this.obstacles = [];
 
+    /** @type {Function|null} 장애물 생성 시 호출되는 훅 (코인 배치 조정 등) */
+    this.onSpawn = null;
+
     this.spawnTimer = 0;
     this.currentInterval = 0;
 
@@ -77,6 +80,7 @@ export class ObstacleSpawner {
 
     const obstacle = new Obstacle(selectedType, this.groundY, spawnX, obstacleAssetConfig);
     this.obstacles.push(obstacle);
+    if (typeof this.onSpawn === 'function') this.onSpawn(obstacle);
   }
 
   /**

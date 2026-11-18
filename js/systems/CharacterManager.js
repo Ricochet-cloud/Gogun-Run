@@ -18,6 +18,8 @@ export class CharacterManager {
     this.base = basePlayerAssets;
     this.list = FALLBACK_CHARACTERS;
     this.selectedId = this._loadSavedId();
+    /** 보유 여부 판정 (상점 연동용; 기본은 전부 보유) */
+    this.isOwned = () => true;
   }
 
   static spriteKey(id) {
@@ -82,11 +84,21 @@ export class CharacterManager {
   }
 
   getSelected() {
-    return this.get(this.selectedId) || this.list[0];
+    const cur = this.get(this.selectedId);
+    if (cur && this.isOwned(cur)) return cur;
+    // 선택 캐릭터가 없거나(삭제됨) 미보유면 보유 중인 첫 캐릭터로 되돌린다
+    const fallback = this.ownedList()[0] || this.list[0];
+    this.selectedId = fallback.ID;
+    return fallback;
+  }
+
+  /** 보유 중인 캐릭터 목록 (타이틀 화면 선택용) */
+  ownedList() {
+    return this.list.filter((c) => this.isOwned(c));
   }
 
   getSelectedIndex() {
-    return Math.max(0, this.list.findIndex((c) => c.ID === this.getSelected().ID));
+    return Math.max(0, this.ownedList().findIndex((c) => c.ID === this.getSelected().ID));
   }
 
   /** 시트 로드에 실패한 캐릭터는 선택 대상에서 제외하지 않고 폴백 렌더링으로 처리한다 */
@@ -100,7 +112,7 @@ export class CharacterManager {
    */
   select(id) {
     const ch = this.get(id);
-    if (!ch) return null;
+    if (!ch || !this.isOwned(ch)) return null;
     this.selectedId = ch.ID;
     try {
       localStorage.setItem(CHARACTER_STORAGE_KEY, ch.ID);
@@ -112,9 +124,11 @@ export class CharacterManager {
 
   /** 오프셋 +1(다음) / -1(이전)로 순환 선택 */
   cycle(step) {
-    const n = this.list.length;
+    const owned = this.ownedList();
+    const n = owned.length;
+    if (n === 0) return null;
     const next = (this.getSelectedIndex() + step + n) % n;
-    return this.select(this.list[next].ID);
+    return this.select(owned[next].ID);
   }
 
   /** Player에 전달할 에셋 설정 (공통 설정 + 캐릭터별 덮어쓰기 + 캐릭터 SRC) */

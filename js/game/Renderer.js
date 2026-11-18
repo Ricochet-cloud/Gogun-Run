@@ -580,8 +580,9 @@ export class Renderer {
 
     ctx.save();
 
-    // 1. 와이어 에너지 오라
-    ctx.strokeStyle = 'rgba(6, 214, 160, 0.45)';
+    // 1. 와이어 에너지 오라 (상점 꾸미기로 색 변경 가능)
+    const rs = this.ropeStyle || {};
+    ctx.strokeStyle = rs.glow || 'rgba(6, 214, 160, 0.45)';
     ctx.lineWidth = 4;
     ctx.beginPath();
     ctx.moveTo(px, py);
@@ -589,7 +590,7 @@ export class Renderer {
     ctx.stroke();
 
     // 2. 강철 와이어 본선
-    ctx.strokeStyle = '#ffffff';
+    ctx.strokeStyle = rs.core || '#ffffff';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(px, py);
@@ -597,7 +598,7 @@ export class Renderer {
     ctx.stroke();
 
     // 3. 접촉점 스파크
-    ctx.fillStyle = '#ffd166';
+    ctx.fillStyle = rs.tip || '#ffd166';
     ctx.beginPath();
     ctx.arc(ax, ay, 3.5, 0, Math.PI * 2);
     ctx.fill();
