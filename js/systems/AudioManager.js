@@ -430,10 +430,120 @@ export class AudioManager {
           });
           break;
         }
+
+        case 'POWERUP': {
+          // 파워업 획득: 상승 아르페지오 (종류별로 음색을 달리함)
+          const kind = options.kind;
+          const base = kind === 'BOOST' ? 523 : kind === 'SHIELD' ? 440 : 392;
+          [1, 1.25, 1.5, 2].forEach((m, i) => this._tone(masterGain, now + i * 0.06, base * m, base * m, 0.12, kind === 'SHIELD' ? 'sine' : 'square', 0.7));
+          break;
+        }
+
+        case 'BOOST_START': {
+          // 부스트 점화: 빠르게 치솟는 휘슬 + 노이즈 질주음
+          this._tone(masterGain, now, 220, 1400, 0.45, 'sawtooth', 0.45);
+          this._noise(masterGain, now, 0.5, 0.35, 0.25);
+          break;
+        }
+
+        case 'BOOST_END': {
+          this._tone(masterGain, now, 900, 200, 0.3, 'triangle', 0.7);
+          break;
+        }
+
+        case 'POWER_DOWN': {
+          this._tone(masterGain, now, 620, 330, 0.18, 'triangle', 0.6);
+          break;
+        }
+
+        case 'SHIELD_BREAK': {
+          // 유리 깨지는 소리: 높은 노이즈 + 하강음
+          this._noise(masterGain, now, 0.3, 0.9, 0.12);
+          this._tone(masterGain, now, 1800, 500, 0.22, 'square', 0.5);
+          this._tone(masterGain, now + 0.05, 1200, 300, 0.25, 'triangle', 0.5);
+          break;
+        }
+
+        case 'SMASH': {
+          // 부스트 박살: 묵직한 퍽 + 파편 노이즈
+          this._tone(masterGain, now, 160, 50, 0.14, 'square', 0.9);
+          this._noise(masterGain, now, 0.18, 0.8, 0.3);
+          break;
+        }
+
+        case 'WARNING': {
+          // 경고음: 짧은 두 번 삐삐
+          this._tone(masterGain, now, 880, 880, 0.08, 'square', 0.55);
+          this._tone(masterGain, now + 0.13, 880, 880, 0.08, 'square', 0.55);
+          break;
+        }
+
+        case 'RESULT_TICK': {
+          // 결과 화면 점수 올라가는 소리 (options.step 이 클수록 높은 음)
+          const f = 660 + Math.min(options.step ?? 0, 12) * 40;
+          this._tone(masterGain, now, f, f, 0.035, 'square', 0.35);
+          break;
+        }
+
+        case 'RESULT_HIT': {
+          // 항목이 착 하고 나타나는 소리
+          this._tone(masterGain, now, 330, 220, 0.09, 'triangle', 0.8);
+          break;
+        }
+
+        case 'RECORD': {
+          // 신기록 팡파르 (도미솔도 + 높은 도)
+          [523, 659, 784, 1047, 1319].forEach((f, i) => {
+            this._tone(masterGain, now + i * 0.1, f, f, i === 4 ? 0.45 : 0.14, 'square', 0.7);
+            this._tone(masterGain, now + i * 0.1, f / 2, f / 2, i === 4 ? 0.45 : 0.14, 'triangle', 0.5);
+          });
+          break;
+        }
+
+        case 'GRADE': {
+          // 등급이 찍히는 소리 (options.rank 가 높을수록 화려함)
+          const n = 2 + Math.min(options.rank ?? 0, 3);
+          for (let i = 0; i < n; i++) this._tone(masterGain, now + i * 0.07, 440 * Math.pow(1.26, i), 440 * Math.pow(1.26, i), 0.16, 'triangle', 0.8);
+          break;
+        }
       }
     } catch (err) {
       // 오디오 합성 에러 무시 (게임 흐름 방해 방지)
     }
+  }
+
+  /**
+   * 합성음 한 음 (주파수가 f0 → f1 로 지수적으로 변하며 점점 작아짐)
+   * @private
+   */
+  _tone(dest, t, f0, f1, dur, type = 'square', vol = 0.8) {
+    const osc = this.audioCtx.createOscillator();
+    const gain = this.audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f0, t);
+    if (f1 !== f0) osc.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+  }
+
+  /** 합성 노이즈 한 번 (dur 초 동안 감쇠) @private */
+  _noise(dest, t, dur, vol = 0.6, smooth = 0.3) {
+    const len = Math.max(1, Math.floor(this.audioCtx.sampleRate * dur));
+    const buf = this.audioCtx.createBuffer(1, len, this.audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len * smooth));
+    const src = this.audioCtx.createBufferSource();
+    src.buffer = buf;
+    const g = this.audioCtx.createGain();
+    g.gain.value = vol;
+    src.connect(g);
+    g.connect(dest);
+    src.start(t);
   }
 
   /**

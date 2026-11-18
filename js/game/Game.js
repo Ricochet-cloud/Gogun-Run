@@ -19,6 +19,7 @@ import { ShopManager } from '../systems/ShopManager.js';
 import { ProfileManager } from '../systems/ProfileManager.js';
 import { CoinSystem } from './CoinSystem.js';
 import { PetCompanion } from './PetCompanion.js';
+import { PowerUpSystem, POWERUP_TYPES } from './PowerUpSystem.js';
 
 /**
  * Gogun Run 메인 게임 엔진 (STEP 5)
@@ -51,6 +52,12 @@ export class Game {
     this.nearMiss = new NearMissSystem(this.config);
     this.coins = new CoinSystem(this.config);
     this.pet = new PetCompanion();
+    this.powerUps = new PowerUpSystem(this.config);
+    this.powerUps.onPickup = (kind, x, y) => this._handlePowerUpPickup(kind, x, y);
+    this.powerUps.onExpire = (kind) => this._handlePowerUpExpire(kind);
+    // 부스트 중에는 낭떠러지가 없는 것처럼 바닥이 이어진 지형을 대신 사용
+    this._boostFloor = [{ x: -100000, y: this.config.WORLD.GROUND_Y, width: 200000, height: 70 }];
+    this.runSeconds = 0;
     this._coinChain = 0;
     this._coinChainTimer = 0;
     this._nextMilestone = this.config.EFFECTS?.MILESTONE_STEP || 0;
@@ -124,6 +131,7 @@ export class Game {
     );
 
     this.obstacleSpawner.onSpawn = (obstacle) => this.coins.onObstacleSpawned(obstacle);
+    this.obstacleSpawner.onWarn = () => this.audioManager.playSfx('WARNING');
 
     // 11. UI 관리자 초기화 (뷰포트 부모 요소에 UI 오버레이 마운트)
     const uiMountPoint = this.canvas.parentElement || document.getElementById('game-container');
@@ -294,6 +302,7 @@ export class Game {
    */
   handleHook() {
     if (this.gameState.is(GameState.PLAYING)) {
+      if (this.powerUps.isBoosting) return;      // 부스트 중에는 갈고리가 필요 없음
       const res = this.hookSystem.triggerHook(this.player, this.audioManager);
       if (res === 'CONNECTED' && this.hookSystem.connectedAnchor) {
         const anchor = this.hookSystem.connectedAnchor;
@@ -316,10 +325,38 @@ export class Game {
     this.audioManager.playSfx('NEAR_MISS', { combo: ev.combo, perfect: ev.kind === 'PERFECT' });
   }
 
+  /** 파워업 획득 연출 */
+  _handlePowerUpPickup(kind, x, y) {
+    const t = POWERUP_TYPES[kind];
+    this.effects.burst(x, y, [t.color, t.glow, '#ffffff'], 18, 0.9);
+    this.effects.shockwave(x, y, t.glow, 46, 0.35);
+    this.effects.popup(t.label.toUpperCase() + '!', x, y - 18, t.glow, 12, 1.0);
+    this.audioManager.playSfx('POWERUP', { kind });
+    if (kind === 'BOOST') {
+      // 매달려 있었거나 낭떠러지 아래로 떨어지던 중이어도 바닥 위로 끌어올린다
+      if (this.player.state === PlayerState.HOOKED) this.hookSystem.releaseHook(this.player, null);
+      const floorY = this.config.WORLD.GROUND_Y;
+      if (this.player.y + this.player.height > floorY) this.player.land(floorY);
+      this.effects.shake(3, 0.25);
+      this.effects.hitStop(0.05);
+      this.audioManager.playSfx('BOOST_START');
+    }
+  }
+
+  _handlePowerUpExpire(kind) {
+    this.audioManager.playSfx(kind === 'BOOST' ? 'BOOST_END' : 'POWER_DOWN');
+    if (kind === 'BOOST') {
+      const p = this.player;
+      this.effects.shockwave(p.x + p.width / 2, p.y + p.height / 2, '#ffd166', 50, 0.3);
+    }
+  }
+
   /**
    * 런 단위 연출/콤보 상태 초기화
    */
   _resetRunFx() {
+    this.powerUps.reset();
+    this.runSeconds = 0;
     this.effects.reset();
     this.nearMiss.reset();
     this._nextMilestone = this.config.EFFECTS?.MILESTONE_STEP || 0;
@@ -462,21 +499,30 @@ export class Game {
       const accel = (this.config.DIFFICULTY && this.config.DIFFICULTY.SPEED_ACCELERATION) || 4.0;
       const maxSpeed = (this.config.DIFFICULTY && this.config.DIFFICULTY.MAX_SPEED) || 460;
       this.currentSpeed = Math.min(this.currentSpeed + accel * dt, maxSpeed);
-      this.player.currentSpeed = this.currentSpeed;
+      this.runSeconds += dt;
+
+      // 1-1. 파워업 갱신 (획득/지속시간/아이템 스폰). 부스트 중에는 월드 속도가 빨라진다
+      this.powerUps.update(dt, this.currentSpeed, {
+        player: this.player,
+        terrain: this.terrainManager,
+        obstacles: this.obstacleSpawner.getObstacles(),
+      });
+      const speed = this.currentSpeed * this.powerUps.speedMul;
+      this.player.currentSpeed = speed;
 
       // 2. 불연속 플랫폼 지형 이동 및 생성 (STEP 5)
-      this.terrainManager.update(dt, this.currentSpeed);
+      this.terrainManager.update(dt, speed);
 
       // 3. 갈고리 앵커 스크롤 및 진자 운동 물리 시뮬레이션 (STEP 5)
-      this.hookSystem.update(dt, this.currentSpeed, this.player);
+      this.hookSystem.update(dt, speed, this.player);
 
       // 4. 플레이어 물리 및 플랫폼 착지 업데이트 (STEP 5)
-      this.player.update(dt, this.terrainManager.getPlatforms());
+      this.player.update(dt, this.powerUps.isBoosting ? this._boostFloor : this.terrainManager.getPlatforms());
 
       // 4-1. 코인 이동/획득 (펫 자석 포함)
       this._coinChainTimer -= dt;
       if (this._coinChainTimer <= 0) this._coinChain = 0;
-      const picked = this.coins.update(dt, this.currentSpeed, this.player, this.pet.getMagnet());
+      const picked = this.coins.update(dt, speed, this.player, this.powerUps.getMagnet(this.player) || this.pet.getMagnet());
       for (const c of picked) {
         this.shop.addCoins(1);
         this.effects.coinPickup(c.x, c.y, this._coinChain);
@@ -486,7 +532,7 @@ export class Game {
       }
 
       // 5. 자동 달리기 바닥 스크롤 오프셋 누적
-      this.groundScrollOffset += this.currentSpeed * dt;
+      this.groundScrollOffset += speed * dt;
 
       // 6. 낭떠러지 추락 사망 판정 (FALL_DEATH_Y 초과 시 GAME_OVER)
       const fallDeathY = this.config.TERRAIN?.FALL_DEATH_Y || 355;
@@ -496,23 +542,25 @@ export class Game {
       }
 
       // 7. 장애물 생성 및 이동 (지형 안전 영역 연동)
-      this.obstacleSpawner.update(dt, this.currentSpeed, this.terrainManager);
+      this.obstacleSpawner.update(dt, speed, this.terrainManager);
 
       // 8. 점수 및 생존 거리 누적
-      this.scoreManager.update(dt, this.currentSpeed);
+      this.scoreManager.update(dt, speed);
 
       // 9. 장애물과의 충돌 검사 (생존 상태일 때만 판정)
       if (this.player.state !== PlayerState.DEAD) {
-        const isCollided = Collision.checkPlayerObstacles(
+        const hitObstacle = Collision.findPlayerObstacle(
           this.player,
           this.obstacleSpawner.getObstacles()
         );
 
-        if (isCollided) {
+        if (hitObstacle && !this._absorbHit(hitObstacle)) {
           this.handleGameOver('OBSTACLE');
         } else {
-          // 10. 니어미스 판정 (장애물 아슬아슬 통과)
-          const events = this.nearMiss.update(dt, this.player, this.obstacleSpawner.getObstacles());
+          // 10. 니어미스 판정 (장애물 아슬아슬 통과). 부스트 중에는 콤보 타이머만 흘려보낸다
+          const events = this.nearMiss.update(
+            dt, this.player, this.powerUps.isBoosting ? [] : this.obstacleSpawner.getObstacles()
+          );
           for (const ev of events) this._handleNearMiss(ev);
 
           // 11. 점수 마일스톤 연출
@@ -532,9 +580,42 @@ export class Game {
     this.uiManager.updateHUD(
       this.scoreManager.currentScore,
       this.scoreManager.bestScore,
-      this.currentSpeed
+      this.currentSpeed * this.powerUps.speedMul
     );
     this.uiManager.updateCoins(this.coins.runCollected, this.shop.coins);
+  }
+
+  /**
+   * 장애물 충돌을 파워업이 막아주는지 처리.
+   * 부스트: 장애물을 박살내며 통과 / 무적 직후: 그냥 통과 / 방어막: 1회 방어 후 장애물 파괴
+   * @returns {boolean} true 면 죽지 않음
+   */
+  _absorbHit(obstacle) {
+    const pu = this.powerUps;
+    const cx = obstacle.x + obstacle.width / 2;
+    const cy = obstacle.y + obstacle.height / 2;
+    if (pu.isBoosting) {
+      this.obstacleSpawner.remove(obstacle);
+      pu.stats.smashes++;
+      this.scoreManager.addBonus(20);
+      this.effects.burst(cx, cy, ['#ffd166', '#ff9f43', '#ffffff', '#2a1636'], 18, 1.1);
+      this.effects.popup('SMASH +20', cx, cy - 12, '#ffd166', 10, 0.7);
+      this.effects.shake(2, 0.12);
+      this.audioManager.playSfx('SMASH');
+      return true;
+    }
+    if (pu.grace > 0) return true;
+    if (pu.consumeShield()) {
+      this.obstacleSpawner.remove(obstacle);
+      this.effects.burst(cx, cy, ['#4cc9f0', '#a5e8ff', '#ffffff'], 26, 1.2);
+      this.effects.shockwave(this.player.x + this.player.width / 2, this.player.y + this.player.height / 2, '#a5e8ff', 70, 0.4);
+      this.effects.popup('BLOCKED!', cx, cy - 14, '#a5e8ff', 12, 0.9);
+      this.effects.shake(4, 0.2);
+      this.effects.hitStop(0.06);
+      this.audioManager.playSfx('SHIELD_BREAK');
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -555,6 +636,12 @@ export class Game {
       nearMisses: this.nearMiss.totalCount,
       maxCombo: this.nearMiss.maxCombo,
       coins: this.coins.runCollected,
+      bonus: this.scoreManager.bonus,
+      distanceScore: Math.max(0, this.scoreManager.currentScore - this.scoreManager.bonus),
+      seconds: this.runSeconds,
+      powerUps: this.powerUps.stats.pickups,
+      shieldSaves: this.powerUps.stats.shieldSaves,
+      smashes: this.powerUps.stats.smashes,
     });
     this.shop.save(); // 이번 판에서 모은 코인 저장
     this.profile.recordRun({ nearMisses: this.nearMiss.totalCount, coins: this.coins.runCollected });
@@ -602,7 +689,7 @@ export class Game {
     this.renderer.clear();
 
     // 2. 패럴랙스 배경 렌더링
-    const bgSpeed = this.gameState.is(GameState.PLAYING) ? this.currentSpeed : 40;
+    const bgSpeed = this.gameState.is(GameState.PLAYING) ? this.currentSpeed * this.powerUps.speedMul : 40;
     this.renderer.drawBackground(bgSpeed, dt);
 
     // 3. 불연속 플랫폼 지형 렌더링 (낭떠러지 구간은 바닥이 뚫려 심연이 노출됨)
@@ -622,7 +709,7 @@ export class Game {
     // 5-1. 이펙트 갱신 및 속도선(캐릭터 뒤)
     this.effects.update(dt, {
       player: this.player,
-      speed: this.currentSpeed,
+      speed: this.currentSpeed * this.powerUps.speedMul,
       playing: this.gameState.is(GameState.PLAYING),
     });
     if (this.gameState.is(GameState.PLAYING)) {
@@ -635,15 +722,24 @@ export class Game {
 
     // 6. 장애물 에셋 렌더링
     this.obstacleSpawner.render(this.renderer.ctx);
+    this.obstacleSpawner.renderWarnings(this.renderer.ctx);
+    if (!this.gameState.is(GameState.READY)) this.powerUps.renderItems(this.renderer.ctx);
 
     // 6-1. 펫 (플레이어 뒤)
     this.pet.render(this.renderer.ctx);
 
     // 7. 플레이어 스프라이트 렌더링 (공중제비 회전 지원)
-    this.player.render(this.renderer.ctx);
+    const rctx = this.renderer.ctx;
+    this.powerUps.renderBehindPlayer(rctx, this.player);
+    rctx.save();
+    rctx.globalAlpha = this.powerUps.playerAlpha();
+    this.player.render(rctx);
+    rctx.restore();
+    this.powerUps.renderFrontOfPlayer(rctx, this.player);
 
     // 7-1. 파티클/링/팝업/콤보 HUD
     this.effects.drawFront(this.renderer.ctx);
+    if (this.gameState.is(GameState.PLAYING)) this.powerUps.renderHUD(this.renderer.ctx);
 
     // 8. 포스트 렌더링 효과 (파티클, 화면 흔들림 복원, 피격 섬광, 추락 암전)
     this.renderer.renderPostEffects(dt);

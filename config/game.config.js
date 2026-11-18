@@ -62,7 +62,31 @@ export const GAME_CONFIG = Object.freeze({
         height: 28,
         hitbox: { offsetX: 4, offsetY: 4, width: 40, height: 24 },
       },
+      // --- 후반(속도가 오른 뒤)에 등장하는 변화형 장애물 ---
+      {
+        // 쌍둥이 바위: 폭이 넓어서 점프 타이밍이 더 중요하다
+        id: 'TWIN_ROCK',
+        width: 64,
+        height: 32,
+        hitbox: { offsetX: 4, offsetY: 4, width: 56, height: 28 },
+        minSpeed: 272,
+        weight: 0.8,
+      },
+      {
+        // 박쥐 요괴: 공중을 날아온다. 점프하면 부딪히니 "점프하지 말고" 아래로 지나가야 한다.
+        // flyY = 바닥에서 박쥐 윗면까지의 높이, extraSpeed = 월드보다 더 빨리 다가오는 속도
+        id: 'BAT',
+        width: 36,
+        height: 22,
+        hitbox: { offsetX: 4, offsetY: 4, width: 28, height: 14 },
+        flyY: 88,
+        extraSpeed: 55,
+        warn: true,
+        minSpeed: 262,
+        weight: 0.9,
+      },
     ],
+    WARNING_TIME: 0.9,          // 경고(!)가 먼저 뜨고 이 시간(초) 뒤에 장애물이 나타남
     // 장애물 간 안전 최소/최대 거리 (px)
     MIN_GAP_DISTANCE: 340,
     MAX_GAP_DISTANCE: 520,
@@ -78,6 +102,14 @@ export const GAME_CONFIG = Object.freeze({
   // 점수 산정 규칙
   SCORE: {
     POINTS_PER_PIXEL: 0.1,    // 10px 이동 시 1점 누적
+    // 결과 화면 등급 (점수가 min 이상이면 해당 등급)
+    GRADES: [
+      { min: 0, label: 'C', color: '#94a3b8' },
+      { min: 300, label: 'B', color: '#74c0fc' },
+      { min: 800, label: 'A', color: '#06d6a0' },
+      { min: 1500, label: 'S', color: '#ffd166' },
+      { min: 2500, label: 'SS', color: '#ff5d73' },
+    ],
   },
 
   // 지형 및 플랫폼 설정 (STEP 5 & 6 밸런스 조정)

@@ -19,8 +19,15 @@ export class Obstacle {
     this.assetConfig = assetConfig;
 
     this.x = startX;
-    this.y = groundY - this.height;
+    this.flying = typeConfig.flyY != null;
+    this.extraSpeed = typeConfig.extraSpeed || 0;
+    this.baseY = this.flying ? groundY - typeConfig.flyY : groundY - this.height;
+    this.y = this.baseY;
+    this.age = 0;
   }
+
+  /** 아래로 지나가야 하는 공중 장애물인지 (니어미스 판정 방향이 반대) */
+  get passUnder() { return this.flying; }
 
   /**
    * 이동 업데이트
@@ -28,7 +35,9 @@ export class Obstacle {
    * @param {number} speed 현재 게임 이동 속도 (px/s)
    */
   update(dt, speed) {
-    this.x -= speed * dt;
+    this.x -= (speed + this.extraSpeed) * dt;
+    this.age += dt;
+    if (this.flying) this.y = this.baseY + Math.sin(this.age * 4.5) * 4;
   }
 
   /**
@@ -92,6 +101,13 @@ export class Obstacle {
       case 'CURSED_THORNS':
         this._renderCursedThorns(ctx, x, y, w, h);
         break;
+      case 'TWIN_ROCK':
+        this._renderDemonRock(ctx, x, y, 26, h);
+        this._renderDemonRock(ctx, x + 36, y + 2, 26, h - 2);
+        break;
+      case 'BAT':
+        this._renderBat(ctx, x, y, w, h);
+        break;
       default:
         ctx.fillStyle = '#e63946';
         ctx.fillRect(x, y, w, h);
@@ -99,6 +115,55 @@ export class Obstacle {
     }
 
     ctx.restore();
+  }
+
+  /**
+   * 박쥐 요괴 렌더링 (날개 퍼덕임, 붉은 눈)
+   */
+  _renderBat(ctx, x, y, w, h) {
+    const flap = Math.sin(this.age * 22);           // -1(날개 위) ~ 1(날개 아래)
+    const wingY = Math.round(flap * 7);
+    const cx = x + w / 2;
+    const cy = y + h / 2 + 2;
+
+    // 날개 (좌/우)
+    ctx.fillStyle = '#2a1636';
+    for (const dir of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(cx + dir * 4, cy - 2);
+      ctx.lineTo(cx + dir * 17, cy - 8 - wingY);
+      ctx.lineTo(cx + dir * 15, cy - 1 - wingY * 0.4);
+      ctx.lineTo(cx + dir * 11, cy + 3 - wingY * 0.3);
+      ctx.lineTo(cx + dir * 8, cy + 1);
+      ctx.lineTo(cx + dir * 5, cy + 6);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillStyle = '#4a2a5e';                       // 날개 윗결
+    for (const dir of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(cx + dir * 4, cy - 2);
+      ctx.lineTo(cx + dir * 17, cy - 8 - wingY);
+      ctx.lineTo(cx + dir * 11, cy - 3 - wingY * 0.5);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // 몸통과 귀
+    ctx.fillStyle = '#1c0f26';
+    ctx.beginPath(); ctx.ellipse(cx, cy + 1, 7, 8, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(cx - 6, cy - 5); ctx.lineTo(cx - 5, cy - 12); ctx.lineTo(cx - 1, cy - 6);
+    ctx.moveTo(cx + 6, cy - 5); ctx.lineTo(cx + 5, cy - 12); ctx.lineTo(cx + 1, cy - 6);
+    ctx.fill();
+
+    // 눈과 송곳니
+    ctx.fillStyle = '#ff2d55';
+    ctx.fillRect(cx - 4, cy - 2, 3, 3);
+    ctx.fillRect(cx + 1, cy - 2, 3, 3);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(cx - 3, cy + 4, 1, 3);
+    ctx.fillRect(cx + 2, cy + 4, 1, 3);
   }
 
   /**

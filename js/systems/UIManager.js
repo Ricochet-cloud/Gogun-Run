@@ -35,7 +35,7 @@ export class UIManager {
 
     this.lastDeathCause = 'OBSTACLE';
     // 직전 플레이의 니어미스 통계 (게임 오버 화면 표시용)
-    this.runStats = { nearMisses: 0, maxCombo: 0, coins: 0 };
+    this.runStats = { nearMisses: 0, maxCombo: 0, coins: 0, bonus: 0, distanceScore: 0, seconds: 0, powerUps: 0, shieldSaves: 0, smashes: 0 };
     this._lastCoinText = '';
 
     // 생성된 DOM 요소 캐시
@@ -224,23 +224,45 @@ export class UIManager {
             </div>
           </div>
 
-          <div class="score-summary-card">
-            <div class="score-card-row">
+          <div class="result-top">
+            <div id="game-over-grade" class="result-grade" data-grade="C" aria-label="등급">
+              <span class="grade-caption">GRADE</span>
+              <span id="game-over-grade-letter" class="grade-letter">-</span>
+            </div>
+            <div class="result-score-box">
               <span class="card-label">최종 점수</span>
               <span id="game-over-final-score" class="card-val final-val">000000</span>
+              <span id="game-over-goal" class="result-goal"></span>
             </div>
-            <div class="score-card-divider"></div>
-            <div class="score-card-row">
-              <span class="card-label">최고 기록</span>
-              <span id="game-over-best-score" class="card-val best-val">000000</span>
+          </div>
+
+          <div id="game-over-card" class="score-summary-card">
+            <div class="score-card-row result-row">
+              <span class="card-label">거리 점수</span>
+              <span id="game-over-distance" class="card-val dist-val">0</span>
             </div>
-            <div class="score-card-divider"></div>
-            <div class="score-card-row">
+            <div class="score-card-row result-row">
+              <span class="card-label">니어미스 보너스</span>
+              <span id="game-over-bonus" class="card-val near-miss-val">+0</span>
+            </div>
+            <div class="score-card-row result-row">
               <span class="card-label">니어미스 / 최대 콤보</span>
               <span id="game-over-near-miss" class="card-val near-miss-val">0회 · x0</span>
             </div>
+            <div class="score-card-row result-row">
+              <span class="card-label">파워업 / 방어 / 박살</span>
+              <span id="game-over-powerups" class="card-val power-val">0 · 0 · 0</span>
+            </div>
+            <div class="score-card-row result-row">
+              <span class="card-label">생존 시간</span>
+              <span id="game-over-time" class="card-val dist-val">0초</span>
+            </div>
             <div class="score-card-divider"></div>
-            <div class="score-card-row">
+            <div class="score-card-row result-row">
+              <span class="card-label">최고 기록</span>
+              <span id="game-over-best-score" class="card-val best-val">000000</span>
+            </div>
+            <div class="score-card-row result-row">
               <span class="card-label">이번 판 획득 코인</span>
               <span id="game-over-coins" class="card-val coin-val">0</span>
             </div>
@@ -385,6 +407,14 @@ export class UIManager {
       gameOverFinalScore: this.overlay.querySelector('#game-over-final-score'),
       gameOverBestScore: this.overlay.querySelector('#game-over-best-score'),
       gameOverNearMiss: this.overlay.querySelector('#game-over-near-miss'),
+      gameOverCard: this.overlay.querySelector('#game-over-card'),
+      gameOverGrade: this.overlay.querySelector('#game-over-grade'),
+      gameOverGradeLetter: this.overlay.querySelector('#game-over-grade-letter'),
+      gameOverGoal: this.overlay.querySelector('#game-over-goal'),
+      gameOverDistance: this.overlay.querySelector('#game-over-distance'),
+      gameOverBonus: this.overlay.querySelector('#game-over-bonus'),
+      gameOverPowerups: this.overlay.querySelector('#game-over-powerups'),
+      gameOverTime: this.overlay.querySelector('#game-over-time'),
       btnGameOverRestart: this.overlay.querySelector('#btn-game-over-restart'),
       btnGameOverTitle: this.overlay.querySelector('#btn-game-over-title'),
       btnGameOverSettings: this.overlay.querySelector('#btn-game-over-settings'),
@@ -660,6 +690,7 @@ export class UIManager {
     this.elements.screenHud.style.display = 'none';
     this.elements.screenPaused.style.display = 'none';
     this.elements.screenGameOver.style.display = 'none';
+    if (state !== GameState.GAME_OVER) this._cancelResult();
 
     switch (state) {
       case GameState.READY:
@@ -695,28 +726,143 @@ export class UIManager {
             this.elements.gameOverCause.style.color = '#94a3b8';
           }
         }
-        if (this.elements.gameOverNearMiss) {
-          this.elements.gameOverNearMiss.textContent =
-            `${this.runStats.nearMisses}회 · x${this.runStats.maxCombo}`;
-        }
-        if (this.elements.gameOverCoins) {
-          this.elements.gameOverCoins.textContent = `+${this.runStats.coins}`;
-        }
-        if (this.scoreManager) {
-          const finalVal = this.scoreManager.formatScore(this.scoreManager.currentScore);
-          const bestVal = this.scoreManager.formatScore(this.scoreManager.bestScore);
-          this.elements.gameOverFinalScore.textContent = finalVal;
-          this.elements.gameOverBestScore.textContent = bestVal;
-
-          // 신기록 달성 강조 배너 표시
-          if (this.scoreManager.hasNewRecord) {
-            this.elements.gameOverNewRecord.style.display = 'block';
-          } else {
-            this.elements.gameOverNewRecord.style.display = 'none';
-          }
-        }
+        this._playResultSequence();
         break;
     }
+  }
+
+  // ===========================================================================
+  // 결과 화면 연출 (점수 카운트업 → 항목 차례로 등장 → 등급 도장 → 신기록 팡파르)
+  // ===========================================================================
+
+  /** 점수에 맞는 등급과 다음 등급 정보 */
+  _gradeFor(score) {
+    const list = (this.scoreManager?.scoreConfig?.GRADES) || [{ min: 0, label: 'C', color: '#94a3b8' }];
+    let idx = 0;
+    for (let i = 0; i < list.length; i++) if (score >= list[i].min) idx = i;
+    return { grade: list[idx], rank: idx, next: list[idx + 1] || null };
+  }
+
+  _cancelResult() {
+    this._resultToken = (this._resultToken || 0) + 1;
+    if (this._resultTimers) { for (const t of this._resultTimers) clearTimeout(t); }
+    this._resultTimers = [];
+    if (this._resultRaf) { cancelAnimationFrame(this._resultRaf); this._resultRaf = 0; }
+  }
+
+  _playResultSequence() {
+    this._cancelResult();
+    const el = this.elements;
+    const st = this.runStats;
+    const sm = this.scoreManager;
+    if (!sm || !el.gameOverFinalScore) return;
+    const token = this._resultToken;
+    const sfx = (k, o) => { if (this.audioManager) this.audioManager.playSfx(k, o); };
+    const fmtN = (n) => Math.round(n).toLocaleString('ko-KR');
+
+    const finalScore = sm.currentScore;
+    const best = sm.bestScore;
+    const isRecord = sm.hasNewRecord;
+    const { grade, rank, next } = this._gradeFor(finalScore);
+    const distance = st.distanceScore ?? Math.max(0, finalScore - (st.bonus || 0));
+
+    // 최종 값들은 미리 정확히 채워 둔다 (카운트업이 건너뛰어져도 값이 맞도록)
+    const finals = () => {
+      el.gameOverFinalScore.textContent = sm.formatScore(finalScore);
+      el.gameOverBestScore.textContent = sm.formatScore(best);
+      el.gameOverDistance.textContent = fmtN(distance);
+      el.gameOverBonus.textContent = `+${fmtN(st.bonus || 0)}`;
+      el.gameOverNearMiss.textContent = `${st.nearMisses}회 · x${st.maxCombo}`;
+      el.gameOverPowerups.textContent = `${st.powerUps || 0} · ${st.shieldSaves || 0} · ${st.smashes || 0}`;
+      el.gameOverTime.textContent = `${Math.round(st.seconds || 0)}초`;
+      el.gameOverCoins.textContent = `+${st.coins}`;
+      el.gameOverGradeLetter.textContent = grade.label;
+      el.gameOverGrade.dataset.grade = grade.label;
+      el.gameOverGrade.style.setProperty('--grade-color', grade.color);
+      el.gameOverGrade.classList.add('stamped');
+      el.gameOverNewRecord.style.display = isRecord ? 'block' : 'none';
+      let goal;
+      if (isRecord) goal = '최고 기록을 갱신했어요!';
+      else {
+        const gap = best - finalScore + 1;
+        goal = `신기록까지 ${fmtN(gap)}점`;
+      }
+      if (next) goal += ` · ${next.label}등급까지 ${fmtN(next.min - finalScore)}점`;
+      else goal += ' · 최고 등급!';
+      el.gameOverGoal.textContent = goal;
+    };
+
+    // 연출 시작 상태: 비워 둠
+    finals();
+    const rows = [...el.gameOverCard.querySelectorAll('.result-row')];
+    rows.forEach((r) => r.classList.remove('shown'));
+    el.gameOverGrade.classList.remove('stamped');
+    el.gameOverNewRecord.style.display = 'none';
+    el.gameOverGoal.classList.remove('shown');
+    el.gameOverFinalScore.textContent = sm.formatScore(0);
+
+    const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const finish = () => {
+      finals();
+      rows.forEach((r) => r.classList.add('shown'));
+      el.gameOverGoal.classList.add('shown');
+    };
+    if (reduce) { finish(); return; }
+
+    // 클릭/터치로 연출 건너뛰기 (버튼은 제외)
+    const panel = el.screenGameOver.querySelector('.game-over-panel');
+    const skip = (e) => {
+      if (e.target.closest && e.target.closest('button')) return;
+      panel.removeEventListener('pointerdown', skip);
+      this._cancelResult();
+      finish();
+    };
+    panel.addEventListener('pointerdown', skip);
+    this._resultTimers.push(0);   // 자리 표시 (cancel 시 clearTimeout(0) 무해)
+
+    const later = (ms, fn) => {
+      const id = setTimeout(() => { if (token === this._resultToken) fn(); }, ms);
+      this._resultTimers.push(id);
+    };
+
+    // 1) 점수 카운트업
+    const COUNT_MS = Math.min(1400, 600 + finalScore * 0.35);
+    const t0 = performance.now();
+    let lastTick = -1;
+    const step = (now) => {
+      if (token !== this._resultToken) return;
+      const k = Math.min(1, (now - t0) / COUNT_MS);
+      const eased = 1 - Math.pow(1 - k, 3);
+      el.gameOverFinalScore.textContent = sm.formatScore(finalScore * eased);
+      const tick = Math.floor(k * 18);
+      if (tick !== lastTick && k < 1) { lastTick = tick; sfx('RESULT_TICK', { step: tick }); }
+      if (k < 1) this._resultRaf = requestAnimationFrame(step);
+      else {
+        this._resultRaf = 0;
+        el.gameOverFinalScore.textContent = sm.formatScore(finalScore);
+        el.gameOverFinalScore.classList.add('pop');
+        later(300, () => el.gameOverFinalScore.classList.remove('pop'));
+      }
+    };
+    this._resultRaf = requestAnimationFrame(step);
+
+    // 2) 항목이 차례로 나타남
+    let t = COUNT_MS + 120;
+    rows.forEach((r) => {
+      later(t, () => { r.classList.add('shown'); sfx('RESULT_HIT'); });
+      t += 130;
+    });
+    // 3) 등급 도장
+    later(t + 100, () => {
+      el.gameOverGrade.classList.add('stamped');
+      sfx('GRADE', { rank });
+      el.gameOverGoal.classList.add('shown');
+    });
+    // 4) 신기록 팡파르
+    if (isRecord) {
+      later(t + 450, () => { el.gameOverNewRecord.style.display = 'block'; sfx('RECORD'); });
+    }
+    later(t + 600, () => panel.removeEventListener('pointerdown', skip));
   }
 
   /**
@@ -754,6 +900,12 @@ export class UIManager {
       nearMisses: Math.max(0, Math.floor(stats?.nearMisses || 0)),
       maxCombo: Math.max(0, Math.floor(stats?.maxCombo || 0)),
       coins: Math.max(0, Math.floor(stats?.coins || 0)),
+      bonus: Math.max(0, Math.floor(stats?.bonus || 0)),
+      distanceScore: Math.max(0, Math.floor(stats?.distanceScore || 0)),
+      seconds: Math.max(0, Number(stats?.seconds) || 0),
+      powerUps: Math.max(0, Math.floor(stats?.powerUps || 0)),
+      shieldSaves: Math.max(0, Math.floor(stats?.shieldSaves || 0)),
+      smashes: Math.max(0, Math.floor(stats?.smashes || 0)),
     };
   }
 
@@ -921,6 +1073,7 @@ export class UIManager {
    * UI 이벤트 리스너 및 DOM 정리 (STEP 6 메모리 누수 방지)
    */
   destroy() {
+    this._cancelResult();
     if (this._onOrientationResize && typeof window !== 'undefined') {
       window.removeEventListener('resize', this._onOrientationResize);
       window.removeEventListener('orientationchange', this._onOrientationResize);

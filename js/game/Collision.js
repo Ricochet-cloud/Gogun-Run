@@ -27,8 +27,18 @@ export class Collision {
    * @returns {boolean} 충돌 발생 여부
    */
   static checkPlayerObstacles(player, obstacles) {
+    return Collision.findPlayerObstacle(player, obstacles) !== null;
+  }
+
+  /**
+   * 플레이어와 처음으로 충돌한 장애물 반환 (없으면 null)
+   * @param {Object} player Player 인스턴스
+   * @param {Array<Object>} obstacles Obstacle 인스턴스 배열
+   * @returns {Object|null}
+   */
+  static findPlayerObstacle(player, obstacles) {
     if (!player || !obstacles || obstacles.length === 0) {
-      return false;
+      return null;
     }
 
     const playerBox = player.getHitbox();
@@ -45,10 +55,10 @@ export class Collision {
       // 2. 히트박스 기반 AABB 검사
       const obsBox = obstacle.getHitbox();
       if (Collision.checkAABB(playerBox, obsBox)) {
-        return true;
+        return obstacle;
       }
     }
 
-    return false;
+    return null;
   }
 }

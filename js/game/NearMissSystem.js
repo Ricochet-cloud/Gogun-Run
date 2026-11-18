@@ -85,7 +85,8 @@ export class NearMissSystem {
 
       if (overlapX) {
         // 양수면 플레이어가 장애물 위쪽에 있음 (음수면 겹침 = 충돌 상황)
-        const gap = ob.y - playerBottom;
+        // 공중 장애물(박쥐)은 아래로 지나가므로 방향이 반대: 플레이어 머리와 장애물 아랫면 사이 간격
+        const gap = obstacle.passUnder ? pb.y - (ob.y + ob.height) : ob.y - playerBottom;
         if (!rec) {
           rec = { minGap: gap, invalid: false };
           this.tracked.set(obstacle, rec);

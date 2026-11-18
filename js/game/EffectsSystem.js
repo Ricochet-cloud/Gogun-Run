@@ -299,6 +299,36 @@ export class EffectsSystem {
   }
 
   /**
+   * 범용 파편 폭발 (파워업 획득, 방어막 파괴, 장애물 박살 등에 사용)
+   * @param {number} x
+   * @param {number} y
+   * @param {string[]} colors
+   * @param {number} count
+   * @param {number} power 파편 속도 배율
+   */
+  burst(x, y, colors, count = 16, power = 1) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = (70 + Math.random() * 170) * power;
+      this._push({
+        x, y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 40,
+        size: 2 + Math.floor(Math.random() * 3),
+        color: colors[Math.floor(Math.random() * colors.length)],
+        life: 0.4 + Math.random() * 0.35,
+        maxLife: 0.75,
+        gravity: 420,
+      });
+    }
+  }
+
+  /** 퍼져나가는 원형 충격파 */
+  shockwave(x, y, color = '#ffffff', maxR = 60, life = 0.35) {
+    this._ring(x, y, 6, maxR, life, color);
+  }
+
+  /**
    * 점수 마일스톤 팝업 (화면 상단 중앙)
    */
   milestone(value) {

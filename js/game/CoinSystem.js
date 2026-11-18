@@ -75,6 +75,7 @@ export class CoinSystem {
    * @param {{x:number,y:number,width:number,height:number}} obstacle
    */
   onObstacleSpawned(obstacle) {
+    if (obstacle.flying) return;      // 공중 장애물(박쥐)은 아래로 달려 지나가야 하므로 지면 코인을 그대로 둔다
     const left = obstacle.x - 34;
     const right = obstacle.x + obstacle.width + 34;
     // 장애물 높이 안에 걸치는 코인 제거
