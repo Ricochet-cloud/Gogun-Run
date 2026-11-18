@@ -16,6 +16,7 @@ import { EffectsSystem } from './EffectsSystem.js';
 import { NearMissSystem } from './NearMissSystem.js';
 import { CharacterManager } from '../systems/CharacterManager.js';
 import { ShopManager } from '../systems/ShopManager.js';
+import { ProfileManager } from '../systems/ProfileManager.js';
 import { CoinSystem } from './CoinSystem.js';
 import { PetCompanion } from './PetCompanion.js';
 
@@ -75,6 +76,7 @@ export class Game {
     this.characters = new CharacterManager(this.assetsConfig.PLAYER);
     // 상점 (지갑 / 보유 / 장착). 캐릭터 보유 여부는 상점이 판단한다
     this.shop = new ShopManager(this.characters);
+    this.profile = new ProfileManager();
     this.characters.isOwned = (ch) => this.shop.ownsCharacter(ch);
     this.player = new Player(
       this.config.PLAYER,
@@ -137,6 +139,7 @@ export class Game {
       onHookAction: () => this.handleHook(),
       characters: this.characters,
       shop: this.shop,
+      profile: this.profile,
       onSelectCharacter: (id) => this.selectCharacter(id),
     });
 
@@ -554,6 +557,7 @@ export class Game {
       coins: this.coins.runCollected,
     });
     this.shop.save(); // 이번 판에서 모은 코인 저장
+    this.profile.recordRun({ nearMisses: this.nearMiss.totalCount, coins: this.coins.runCollected });
 
     this.gameState.setState(GameState.GAME_OVER);
     this.player.die();

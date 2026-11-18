@@ -1,11 +1,16 @@
 import { GameState } from '../game/GameState.js';
 import { ShopUI } from './ShopUI.js';
+import { NICKNAME_MAX } from './ProfileManager.js';
 
 /**
  * UI 관리자 모듈 (UIManager)
  * 시작 화면(READY), 플레이 HUD(PLAYING), 일시정지(PAUSED), 게임 오버(GAME_OVER),
  * 설정 모달(SETTINGS)을 관리하고 Demon Slayer 테마의 현대적 픽셀 UI를 렌더링합니다.
  */
+function p0frame(el) {
+  return el.charPreview ? el.charPreview.parentElement : null;
+}
+
 export class UIManager {
   /**
    * @param {HTMLElement} rootContainer UI가 삽입될 부모 엘리먼트 (보통 #game-viewport 또는 #game-container)
@@ -25,6 +30,7 @@ export class UIManager {
     this.onHookAction = options.onHookAction || (() => {});
     this.characters = options.characters || null;
     this.shop = options.shop || null;
+    this.profile = options.profile || null;
     this.onSelectCharacter = options.onSelectCharacter || (() => {});
 
     this.lastDeathCause = 'OBSTACLE';
@@ -103,55 +109,71 @@ export class UIManager {
         </div>
       </div>
 
-      <!-- 2. 시작 화면 (READY) -->
-      <div id="screen-ready" class="ui-screen modal-backdrop" style="display: none;">
-        <div class="ui-panel ready-panel">
-          <div class="panel-header">
+      <!-- 2. 홈 화면 (READY) -->
+      <div id="screen-ready" class="ui-screen home-screen" style="display: none;">
+        <div class="home-top">
+          <div class="home-brand">
             <div class="badge-theme">DEMON SLAYER RUNNER</div>
             <h1 class="ui-title logo-text">GOGUN RUN</h1>
-            <p class="ui-subtitle">혈귀를 베는 질주 · 귀멸의 액션 러너</p>
           </div>
+          <div class="home-wallet" title="보유 코인">🪙 <span id="ready-coins" class="coin-val">0</span></div>
+        </div>
 
-          <div class="ready-score-display">
-            <div class="stat-pill">
-              <span class="stat-pill-label">🏆 최고 기록</span>
-              <span id="ready-best-score" class="stat-pill-value">000000</span>
+        <div class="home-main">
+          <!-- 좌: 프로필 카드 -->
+          <section class="home-card home-profile">
+            <div class="profile-head">
+              <div id="profile-avatar" class="profile-avatar"></div>
+              <div class="profile-id">
+                <div class="profile-name-row">
+                  <span id="profile-name" class="profile-name">러너</span>
+                  <input id="profile-name-input" class="profile-name-input ui-interactive" type="text" maxlength="24" style="display: none;" aria-label="닉네임">
+                  <button id="btn-edit-name" class="profile-edit ui-interactive" title="닉네임 바꾸기">✎</button>
+                </div>
+                <div id="profile-msg" class="profile-msg"></div>
+              </div>
             </div>
-            <div class="stat-pill" style="margin-top: 6px;">
-              <span class="stat-pill-label">🪙 보유 코인</span>
-              <span id="ready-coins" class="stat-pill-value coin-val">0</span>
+            <div class="profile-stats">
+              <div class="profile-stat"><span>🏆 최고 기록</span><b id="ready-best-score">000000</b></div>
+              <div class="profile-stat"><span>🏃 플레이 횟수</span><b id="profile-runs">0</b></div>
+              <div class="profile-stat"><span>⚡ 누적 니어미스</span><b id="profile-near">0</b></div>
             </div>
-          </div>
+            <button class="ui-btn ui-btn-subtle home-soon" disabled>✨ 프로필 꾸미기 (준비 중)</button>
+          </section>
 
-          <!-- 캐릭터 선택 -->
-          <div id="char-select" class="char-select" style="display: none;">
-            <button id="btn-char-prev" class="ui-btn ui-btn-icon ui-interactive char-arrow" title="이전 캐릭터 (←)">◀</button>
-            <div class="char-card">
-              <div class="char-preview-frame"><div id="char-preview" class="char-preview"></div></div>
-              <div id="char-name" class="char-name"></div>
-              <div id="char-desc" class="char-desc"></div>
-              <div id="char-dots" class="char-dots"></div>
+          <!-- 중: 캐릭터 -->
+          <section class="home-stage">
+            <div id="char-select" class="char-select" style="display: none;">
+              <button id="btn-char-prev" class="ui-btn ui-btn-icon ui-interactive char-arrow" title="이전 캐릭터 (←)">◀</button>
+              <div class="char-card">
+                <div class="char-preview-frame"><div id="char-preview" class="char-preview"></div></div>
+                <div id="char-name" class="char-name"></div>
+                <div id="char-desc" class="char-desc"></div>
+                <div id="char-dots" class="char-dots"></div>
+              </div>
+              <button id="btn-char-next" class="ui-btn ui-btn-icon ui-interactive char-arrow" title="다음 캐릭터 (→)">▶</button>
             </div>
-            <button id="btn-char-next" class="ui-btn ui-btn-icon ui-interactive char-arrow" title="다음 캐릭터 (→)">▶</button>
-          </div>
+          </section>
 
-          <div class="panel-buttons">
-            <button id="btn-start-game" class="ui-btn ui-btn-primary ui-interactive">
-              게임 시작 [START]
+          <!-- 우: 메뉴 -->
+          <nav class="home-menu">
+            <button id="btn-start-game" class="ui-btn ui-btn-primary ui-interactive home-start">
+              ▶ 게임 시작
             </button>
             <button id="btn-ready-shop" class="ui-btn ui-btn-secondary ui-interactive">
               🛒 상점
             </button>
+            <button id="btn-ready-rank" class="ui-btn ui-btn-subtle" disabled>
+              🏆 랭킹 (준비 중)
+            </button>
             <button id="btn-ready-settings" class="ui-btn ui-btn-secondary ui-interactive">
               ⚙ 환경 설정
             </button>
-          </div>
+          </nav>
+        </div>
 
-          <div class="panel-footer guide-box">
-            <div class="guide-item"><span>[SPACE] / [↑] / [JUMP버튼]</span> : 일반 점프</div>
-            <div class="guide-item"><span>[Z] / [J] / 우클릭 / [HOOK버튼]</span> : 갈고리 연결 / 해제</div>
-            <div class="guide-item"><span>[P] / [ESC]</span> : 일시정지</div>
-          </div>
+        <div class="home-guide">
+          <span>[SPACE]/[↑] 점프</span><span>[Z]/[J]/우클릭 갈고리</span><span>[P]/[ESC] 일시정지</span><span>[←][→] 캐릭터 변경</span>
         </div>
       </div>
 
@@ -321,6 +343,13 @@ export class UIManager {
       hudSpeed: this.overlay.querySelector('#hud-speed'),
       hudCoins: this.overlay.querySelector('#hud-coins'),
       readyCoins: this.overlay.querySelector('#ready-coins'),
+      profileAvatar: this.overlay.querySelector('#profile-avatar'),
+      profileName: this.overlay.querySelector('#profile-name'),
+      profileNameInput: this.overlay.querySelector('#profile-name-input'),
+      btnEditName: this.overlay.querySelector('#btn-edit-name'),
+      profileMsg: this.overlay.querySelector('#profile-msg'),
+      profileRuns: this.overlay.querySelector('#profile-runs'),
+      profileNear: this.overlay.querySelector('#profile-near'),
       gameOverCoins: this.overlay.querySelector('#game-over-coins'),
       btnReadyShop: this.overlay.querySelector('#btn-ready-shop'),
       btnGameOverShop: this.overlay.querySelector('#btn-game-over-shop'),
@@ -425,6 +454,19 @@ export class UIManager {
       this.onStart();
     });
 
+    // 1-0a. 프로필 닉네임 편집 (✎ 클릭 → 입력 → Enter 저장 / Esc 취소)
+    this.elements.btnEditName?.addEventListener('click', () => this._startNameEdit());
+    const nameInput = this.elements.profileNameInput;
+    if (nameInput) {
+      nameInput.maxLength = NICKNAME_MAX * 2; // 입력 중엔 여유를 두고, 저장할 때 정리/자름
+      nameInput.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') { e.preventDefault(); this._commitNameEdit(); }
+        else if (e.key === 'Escape') { e.preventDefault(); this._endNameEdit(); }
+      });
+      nameInput.addEventListener('blur', () => this._commitNameEdit());
+    }
+
     // 1-0. 상점 (타이틀 / 게임 오버 화면에서 열기)
     if (this.shop && this.elements.modalShop) {
       this.shopUI = new ShopUI(this.elements.modalShop, {
@@ -433,7 +475,7 @@ export class UIManager {
         onSelectCharacter: (id) => this.onSelectCharacter(id),
         onClose: () => {
           this._renderCharacterSelect();
-          this._refreshReadyCoins();
+          this._refreshHome();
         },
       });
     }
@@ -625,7 +667,7 @@ export class UIManager {
         if (this.scoreManager) {
           this.elements.readyBestScore.textContent = this.scoreManager.formatScore(this.scoreManager.bestScore);
         }
-        this._refreshReadyCoins();
+        this._refreshHome();
         break;
 
       case GameState.PLAYING:
@@ -725,6 +767,62 @@ export class UIManager {
     this.shopUI?.open();
   }
 
+  /** 홈 화면의 코인 / 프로필 카드 / 아바타 갱신 */
+  _refreshHome() {
+    this._refreshReadyCoins();
+    const el = this.elements;
+    if (this.profile) {
+      if (el.profileName) el.profileName.textContent = this.profile.nickname;
+      if (el.profileRuns) el.profileRuns.textContent = this.profile.state.runs.toLocaleString('ko-KR');
+      if (el.profileNear) el.profileNear.textContent = this.profile.state.nearMisses.toLocaleString('ko-KR');
+    }
+    this._refreshAvatar();
+  }
+
+  /** 선택한 캐릭터의 얼굴 부분을 아바타 틀에 표시 (스프라이트 첫 프레임을 확대해서 자름) */
+  _refreshAvatar() {
+    const av = this.elements.profileAvatar;
+    if (!av || !this.characters) return;
+    const ch = this.characters.getSelected();
+    av.style.backgroundImage = `url("${ch.SRC}")`;   // 크기/위치는 CSS(.profile-avatar)가 담당
+  }
+
+  _startNameEdit() {
+    const el = this.elements;
+    if (!this.profile || !el.profileNameInput) return;
+    el.profileMsg.textContent = '';
+    el.profileNameInput.value = this.profile.nickname;
+    el.profileName.style.display = 'none';
+    el.btnEditName.style.display = 'none';
+    el.profileNameInput.style.display = '';
+    el.profileNameInput.focus();
+    el.profileNameInput.select();
+    this._editingName = true;
+  }
+
+  _commitNameEdit() {
+    if (!this._editingName) return;
+    const el = this.elements;
+    const r = this.profile.setNickname(el.profileNameInput.value);
+    if (!r.ok) {
+      el.profileMsg.textContent = r.reason;
+      el.profileNameInput.focus();
+      return;
+    }
+    el.profileMsg.textContent = '';
+    this._endNameEdit();
+  }
+
+  _endNameEdit() {
+    const el = this.elements;
+    this._editingName = false;
+    el.profileMsg.textContent = '';
+    el.profileNameInput.style.display = 'none';
+    el.profileName.style.display = '';
+    el.btnEditName.style.display = '';
+    this._refreshHome();
+  }
+
   _refreshReadyCoins() {
     if (this.shop && this.elements.readyCoins) {
       this.elements.readyCoins.textContent = this.shop.coins.toLocaleString('ko-KR');
@@ -754,6 +852,7 @@ export class UIManager {
     const ch = this.characters.cycle(step);
     if (ch) this.onSelectCharacter(ch.ID);
     this._renderCharacterSelect();
+    this._refreshAvatar();
   }
 
   /**
@@ -775,7 +874,9 @@ export class UIManager {
     const fh = cfg.FRAME_HEIGHT || 64;
     const run = cfg.ANIMATIONS?.RUN || { FRAMES: [0], FPS: 1 };
     const frames = run.FRAMES.length;
-    const scale = 2;
+    const scale = (this.overlay.clientHeight || 720) >= 520 ? 3 : 2;
+    const frame = p0frame(el);
+    if (frame) { frame.style.width = `${fw * scale}px`; frame.style.height = `${fh * scale}px`; }
 
     const p = el.charPreview;
     p.style.width = `${fw * scale}px`;
