@@ -28,6 +28,7 @@ export class Player {
     this.physics = physicsConfig;
     this.groundY = groundY;
     this.assetConfig = assetConfig;
+    this.spriteKey = 'player'; // AssetLoader 이미지 키 (캐릭터 선택 시 교체)
 
     this.width = playerConfig.WIDTH;
     this.height = playerConfig.HEIGHT;
@@ -54,6 +55,18 @@ export class Player {
     // 사운드 및 외부 이벤트 연동 훅
     this.onJump = null;
     this.onLand = null;
+  }
+
+  /**
+   * 캐릭터(스프라이트 시트) 교체
+   * @param {string} spriteKey AssetLoader 이미지 키
+   * @param {Object} assetConfig 해당 캐릭터의 에셋 설정
+   */
+  setCharacter(spriteKey, assetConfig) {
+    this.spriteKey = spriteKey;
+    this.assetConfig = assetConfig;
+    this.animFrameIndex = 0;
+    this.animTimer = 0;
   }
 
   /**
@@ -332,7 +345,7 @@ export class Player {
    * @param {number} drawY
    */
   _drawSprite(ctx, drawX, drawY) {
-    const img = assetLoader.getImage('player');
+    const img = assetLoader.getImage(this.spriteKey);
 
     if (img && this.assetConfig) {
       const animConfig = this.assetConfig.ANIMATIONS?.[this.currentAnim];

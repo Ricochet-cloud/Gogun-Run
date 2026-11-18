@@ -14,6 +14,7 @@ import { TerrainManager } from './TerrainManager.js';
 import { HookSystem } from './HookSystem.js';
 import { EffectsSystem } from './EffectsSystem.js';
 import { NearMissSystem } from './NearMissSystem.js';
+import { CharacterManager } from '../systems/CharacterManager.js';
 
 /**
  * Gogun Run 메인 게임 엔진 (STEP 5)
@@ -59,13 +60,15 @@ export class Game {
       }
     };
 
-    // 7. 플레이어 인스턴스 초기화 (에셋 설정 전달)
+    // 7. 캐릭터 선택 관리자 + 플레이어 인스턴스 초기화 (에셋 설정 전달)
+    this.characters = new CharacterManager(this.assetsConfig.PLAYER);
     this.player = new Player(
       this.config.PLAYER,
       this.config.PHYSICS,
       this.config.WORLD.GROUND_Y,
-      this.assetsConfig.PLAYER
+      this.characters.getPlayerAssetConfig()
     );
+    this.player.spriteKey = CharacterManager.spriteKey(this.characters.getSelected().ID);
 
     // 8. 플레이어 사운드 및 피드백 이벤트 훅 연결 (STEP 6 착지 먼지 연동)
     this.player.onJump = () => {
@@ -116,6 +119,8 @@ export class Game {
       onTitle: () => this.goToTitle(),
       onJumpAction: () => this.handleJump(),
       onHookAction: () => this.handleHook(),
+      characters: this.characters,
+      onSelectCharacter: (id) => this.selectCharacter(id),
     });
 
     // 게임 이동 속도 (시간 경과에 따라 점진적 가속)
@@ -139,7 +144,7 @@ export class Game {
   async init() {
     // 1. 에셋 매니페스트 구성 및 비동기 일괄 로드
     const manifest = [
-      { key: 'player', src: this.assetsConfig.PLAYER.SRC },
+      ...this.characters.getManifest(),
       { key: 'ground', src: this.assetsConfig.GROUND.SRC },
     ];
 
@@ -159,7 +164,7 @@ export class Game {
       await assetLoader.loadAll(manifest);
       // STEP 6 디버그: 에셋 로드 상태 확인
       console.log('[Game] 에셋 로드 완료:');
-      console.log('  - player:', assetLoader.isLoaded('player') ? '✓ 로드됨' : '✗ 실패');
+      console.log('  - player:', assetLoader.isLoaded(this.player.spriteKey) ? '✓ 로드됨' : '✗ 실패');
       console.log('  - bg_FAR:', assetLoader.isLoaded('bg_FAR') ? '✓ 로드됨' : '✗ 실패');
       console.log('  - bg_MID:', assetLoader.isLoaded('bg_MID') ? '✓ 로드됨' : '✗ 실패');
       console.log('  - bg_NEAR:', assetLoader.isLoaded('bg_NEAR') ? '✓ 로드됨' : '✗ 실패');
@@ -205,6 +210,16 @@ export class Game {
     this.audioManager.unlockAudio();
     this.gameState.setState(GameState.PLAYING);
     this.audioManager.playBgm();
+  }
+
+  /**
+   * 캐릭터 변경 (타이틀 화면에서 호출, 선택은 localStorage에 저장됨)
+   * @param {string} id 캐릭터 ID
+   */
+  selectCharacter(id) {
+    const ch = this.characters.select(id);
+    if (!ch) return;
+    this.player.setCharacter(CharacterManager.spriteKey(ch.ID), this.characters.getPlayerAssetConfig(ch.ID));
   }
 
   /**

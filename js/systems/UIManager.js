@@ -22,6 +22,8 @@ export class UIManager {
     this.onTitle = options.onTitle || (() => {});
     this.onJumpAction = options.onJumpAction || (() => {});
     this.onHookAction = options.onHookAction || (() => {});
+    this.characters = options.characters || null;
+    this.onSelectCharacter = options.onSelectCharacter || (() => {});
 
     this.lastDeathCause = 'OBSTACLE';
     // 직전 플레이의 니어미스 통계 (게임 오버 화면 표시용)
@@ -108,6 +110,18 @@ export class UIManager {
               <span class="stat-pill-label">🏆 최고 기록</span>
               <span id="ready-best-score" class="stat-pill-value">000000</span>
             </div>
+          </div>
+
+          <!-- 캐릭터 선택 -->
+          <div id="char-select" class="char-select" style="display: none;">
+            <button id="btn-char-prev" class="ui-btn ui-btn-icon ui-interactive char-arrow" title="이전 캐릭터 (←)">◀</button>
+            <div class="char-card">
+              <div class="char-preview-frame"><div id="char-preview" class="char-preview"></div></div>
+              <div id="char-name" class="char-name"></div>
+              <div id="char-desc" class="char-desc"></div>
+              <div id="char-dots" class="char-dots"></div>
+            </div>
+            <button id="btn-char-next" class="ui-btn ui-btn-icon ui-interactive char-arrow" title="다음 캐릭터 (→)">▶</button>
           </div>
 
           <div class="panel-buttons">
@@ -271,6 +285,13 @@ export class UIManager {
       // 시작 화면
       readyBestScore: this.overlay.querySelector('#ready-best-score'),
       btnStartGame: this.overlay.querySelector('#btn-start-game'),
+      charSelect: this.overlay.querySelector('#char-select'),
+      charPreview: this.overlay.querySelector('#char-preview'),
+      charName: this.overlay.querySelector('#char-name'),
+      charDesc: this.overlay.querySelector('#char-desc'),
+      charDots: this.overlay.querySelector('#char-dots'),
+      btnCharPrev: this.overlay.querySelector('#btn-char-prev'),
+      btnCharNext: this.overlay.querySelector('#btn-char-next'),
       btnReadySettings: this.overlay.querySelector('#btn-ready-settings'),
 
       // 일시정지 화면
@@ -355,6 +376,19 @@ export class UIManager {
     this.elements.btnStartGame?.addEventListener('click', () => {
       this.onStart();
     });
+
+    // 1-1. 캐릭터 선택 (버튼 / 좌우 방향키)
+    this.elements.btnCharPrev?.addEventListener('click', () => this._cycleCharacter(-1));
+    this.elements.btnCharNext?.addEventListener('click', () => this._cycleCharacter(1));
+    this._onCharKeyDown = (e) => {
+      if (!this.gameState.is(GameState.READY)) return;
+      const settingsOpen = this.elements.modalSettings && this.elements.modalSettings.style.display !== 'none';
+      if (settingsOpen) return;
+      if (e.code === 'ArrowLeft') this._cycleCharacter(-1);
+      else if (e.code === 'ArrowRight') this._cycleCharacter(1);
+    };
+    window.addEventListener('keydown', this._onCharKeyDown);
+    this._renderCharacterSelect();
 
     this.elements.btnReadySettings?.addEventListener('click', () => {
       this.openSettings();
@@ -615,6 +649,58 @@ export class UIManager {
   }
 
   /**
+   * 캐릭터 순환 선택 (시작 화면 전용)
+   * @param {number} step +1 다음 / -1 이전
+   */
+  _cycleCharacter(step) {
+    if (!this.characters || this.characters.list.length < 2) return;
+    const ch = this.characters.cycle(step);
+    if (ch) this.onSelectCharacter(ch.ID);
+    this._renderCharacterSelect();
+  }
+
+  /**
+   * 캐릭터 선택 영역 갱신 (미리보기는 CSS steps 애니메이션으로 달리기 프레임 재생)
+   */
+  _renderCharacterSelect() {
+    const el = this.elements;
+    if (!this.characters || !el.charSelect) return;
+
+    const list = this.characters.list;
+    el.charSelect.style.display = 'flex';
+    const multi = list.length > 1;
+    el.btnCharPrev.style.visibility = multi ? 'visible' : 'hidden';
+    el.btnCharNext.style.visibility = multi ? 'visible' : 'hidden';
+
+    const ch = this.characters.getSelected();
+    const cfg = this.characters.getPlayerAssetConfig(ch.ID);
+    const fw = cfg.FRAME_WIDTH || 64;
+    const fh = cfg.FRAME_HEIGHT || 64;
+    const run = cfg.ANIMATIONS?.RUN || { FRAMES: [0], FPS: 1 };
+    const frames = run.FRAMES.length;
+    const scale = 2;
+
+    const p = el.charPreview;
+    p.style.width = `${fw * scale}px`;
+    p.style.height = `${fh * scale}px`;
+    p.style.backgroundImage = `url("${ch.SRC}")`;
+    p.style.backgroundSize = 'auto 100%';
+    p.style.setProperty('--char-run-shift', `${-fw * scale * frames}px`);
+    p.style.setProperty('--char-run-frames', String(frames));
+    p.style.setProperty('--char-run-duration', `${(frames / (run.FPS || 10)).toFixed(3)}s`);
+    // 애니메이션 재시작 (캐릭터 교체 시 첫 프레임부터)
+    p.style.animation = 'none';
+    void p.offsetWidth;
+    p.style.animation = '';
+
+    el.charName.textContent = ch.NAME;
+    el.charDesc.textContent = ch.DESC || '';
+    el.charDots.innerHTML = list
+      .map((c) => `<span class="char-dot${c.ID === ch.ID ? ' active' : ''}"></span>`)
+      .join('');
+  }
+
+  /**
    * 환경 설정 모달 열기
    */
   openSettings() {
@@ -643,6 +729,9 @@ export class UIManager {
     }
     if (this.overlay && this.overlay.parentNode) {
       this.overlay.parentNode.removeChild(this.overlay);
+    }
+    if (this._onCharKeyDown && typeof window !== 'undefined') {
+      window.removeEventListener('keydown', this._onCharKeyDown);
     }
     if (this._touchButtonCooldown) {
       this._touchButtonCooldown.clear();
