@@ -648,6 +648,11 @@ export class UIManager {
     };
   }
 
+  /** 캐릭터 목록이 바뀐 뒤(JSON 로드 등) 선택 UI 갱신 */
+  refreshCharacterSelect() {
+    this._renderCharacterSelect();
+  }
+
   /**
    * 캐릭터 순환 선택 (시작 화면 전용)
    * @param {number} step +1 다음 / -1 이전

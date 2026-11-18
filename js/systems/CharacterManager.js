@@ -1,4 +1,9 @@
-import { CHARACTERS, DEFAULT_CHARACTER_ID, CHARACTER_STORAGE_KEY } from '../../config/characters.config.js';
+import {
+  FALLBACK_CHARACTERS,
+  CHARACTER_MANIFEST_URL,
+  DEFAULT_CHARACTER_ID,
+  CHARACTER_STORAGE_KEY,
+} from '../../config/characters.config.js';
 import { assetLoader } from './AssetLoader.js';
 
 /**
@@ -11,12 +16,60 @@ export class CharacterManager {
    */
   constructor(basePlayerAssets) {
     this.base = basePlayerAssets;
-    this.list = CHARACTERS;
+    this.list = FALLBACK_CHARACTERS;
     this.selectedId = this._loadSavedId();
   }
 
   static spriteKey(id) {
     return `char_${id}`;
+  }
+
+  /**
+   * JSON 항목을 내부 형식으로 정규화 (잘못된 항목은 null)
+   * 경로/ID는 CSS url(), 파일 경로에 쓰이므로 안전한 문자만 허용한다.
+   */
+  static normalizeEntry(e) {
+    if (!e || typeof e !== 'object') return null;
+    const id = String(e.id ?? e.ID ?? '');
+    const src = String(e.src ?? e.SRC ?? '');
+    if (!/^[A-Za-z0-9_]+$/.test(id)) return null;
+    if (!/^[\w\-./]+$/.test(src) || src.includes('..')) return null;
+    const overrides = e.spriteOverrides ?? e.SPRITE_OVERRIDES;
+    return {
+      ID: id,
+      NAME: String(e.name ?? e.NAME ?? id),
+      DESC: String(e.desc ?? e.DESC ?? ''),
+      SRC: src,
+      PRICE: Number(e.price ?? e.PRICE ?? 0) || 0,
+      SPRITE_OVERRIDES: overrides && typeof overrides === 'object' ? overrides : {},
+    };
+  }
+
+  /**
+   * characters.json 을 읽어 목록 교체 (실패하면 기본 목록 유지)
+   * @returns {Promise<boolean>} JSON 로드 성공 여부
+   */
+  async loadManifest(url = CHARACTER_MANIFEST_URL) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const seen = new Set();
+      const list = [];
+      for (const raw of json.characters || []) {
+        const ch = CharacterManager.normalizeEntry(raw);
+        if (ch && !seen.has(ch.ID)) { seen.add(ch.ID); list.push(ch); }
+      }
+      if (list.length === 0) throw new Error('유효한 캐릭터가 없음');
+      this.list = list;
+      if (!this.get(this.selectedId)) {
+        this.selectedId = this.get(DEFAULT_CHARACTER_ID) ? DEFAULT_CHARACTER_ID : list[0].ID;
+      }
+      return true;
+    } catch (err) {
+      console.warn('[CharacterManager] characters.json 로드 실패 — 기본 캐릭터 목록 사용:', err.message || err);
+      return false;
+    }
   }
 
   /** AssetLoader 매니페스트용 목록 */

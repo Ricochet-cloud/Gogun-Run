@@ -142,6 +142,14 @@ export class Game {
    * @returns {Promise<Game>}
    */
   async init() {
+    // 0. 캐릭터 목록(JSON) 로드 후 현재 선택 캐릭터를 플레이어에 반영
+    await this.characters.loadManifest();
+    this.player.setCharacter(
+      CharacterManager.spriteKey(this.characters.getSelected().ID),
+      this.characters.getPlayerAssetConfig()
+    );
+    this.uiManager.refreshCharacterSelect();
+
     // 1. 에셋 매니페스트 구성 및 비동기 일괄 로드
     const manifest = [
       ...this.characters.getManifest(),

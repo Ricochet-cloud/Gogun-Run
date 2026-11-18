@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "characters": [
+    {
+      "id": "tanjiro",
+      "name": "탄지로",
+      "desc": "기본 캐릭터 · 균형형",
+      "src": "assets/player/tanjiro_sprite_448x64.png",
+      "price": 0,
+      "spriteOverrides": {}
+    },
+    {
+      "id": "placeholder_azure",
+      "name": "청색 검사 (임시)",
+      "desc": "임시 캐릭터 · 새 시트로 교체하세요",
+      "src": "assets/player/characters/placeholder_azure_448x64.png",
+      "price": 0,
+      "spriteOverrides": {}
+    },
+    {
+      "id": "placeholder_gold",
+      "name": "황금 검사 (임시)",
+      "desc": "임시 캐릭터 · 새 시트로 교체하세요",
+      "src": "assets/player/characters/placeholder_gold_448x64.png",
+      "price": 0,
+      "spriteOverrides": {}
+    }
+  ]
+}

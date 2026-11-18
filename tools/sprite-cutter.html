@@ -45,6 +45,19 @@
   .ok { color: var(--accent); } .warn { color: var(--warn); } .err { color: var(--err); }
   textarea { width: 100%; min-height: 150px; background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 8px; font: 12px/1.5 ui-monospace, Consolas, monospace; resize: vertical; }
   #empty { color: var(--dim); text-align: center; padding: 40px 0; }
+  .status { font-size: 12px; padding: 6px 10px; border-radius: 4px; background: var(--bg); border: 1px solid var(--line); }
+  .status.good { color: var(--accent); border-color: var(--accent); }
+  .status.bad { color: var(--err); border-color: var(--err); }
+  .chars { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; margin-top: 10px; }
+  .char { display: flex; gap: 8px; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
+  .char .thumb { width: 48px; height: 48px; flex: none; background-repeat: no-repeat; background-size: auto 100%; image-rendering: pixelated; border-radius: 3px; }
+  .char .meta { flex: 1; min-width: 0; font-size: 12px; }
+  .char .meta b { display: block; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .char .meta span { color: var(--dim); }
+  .char .ops { display: flex; flex-direction: column; gap: 3px; }
+  .char .ops button { padding: 2px 7px; font-size: 11px; font-weight: 400; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--dim); font-size: 12px; }
 </style>
 </head>
 <body>
@@ -137,11 +150,35 @@
       </div>
     </section>
 
-    <section id="snippetBox" hidden>
-      <h2>게임에 넣는 방법</h2>
-      <p class="hint" style="margin:0 0 8px">① 다운로드한 PNG를 <code>assets/player/characters/</code> 폴더에 넣고, ② 아래 항목을 <code>config/characters.config.js</code>의 <code>CHARACTERS</code> 배열에 붙여넣으세요.</p>
-      <textarea id="snippet" readonly></textarea>
-      <div class="row" style="margin-top:8px"><button class="sub" id="copySnippet">복사</button><span class="hint" id="copyInfo"></span></div>
+    <section id="registerBox">
+      <h2>5. 게임에 등록</h2>
+      <p class="hint" style="margin:0 0 8px">게임 폴더를 한 번 연결하면, 아래 버튼 한 번으로 PNG 저장과 캐릭터 목록(<code>characters.json</code>) 갱신이 끝납니다. 등록 후 게임 화면을 새로고침(F5)하면 반영돼요.</p>
+      <div class="row">
+        <button class="sub" id="connect">게임 폴더 연결</button>
+        <span class="status" id="repoStatus">연결 안 됨</span>
+      </div>
+      <div class="grid2" style="margin-top:10px">
+        <label>표시 이름<input id="charName" type="text" placeholder="예: 젠이츠"></label>
+        <label>가격 (0 = 무료)<input id="charPrice" type="number" min="0" value="0"></label>
+        <label class="full">설명<input id="charDesc" type="text" placeholder="예: 번개 호흡 · 빠른 착지"></label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="register" disabled>게임에 등록</button>
+        <button class="sub" id="fallbackDl" hidden>파일로 받기 (직접 복사)</button>
+        <span class="hint" id="registerInfo"></span>
+      </div>
+      <details>
+        <summary>폴더 연결을 못 쓸 때 (Firefox 등) 수동으로 넣는 방법</summary>
+        <p class="hint">① PNG를 <code>assets/player/characters/</code> 에 저장 ② 아래 항목을 <code>assets/player/characters/characters.json</code> 의 <code>characters</code> 배열에 추가하세요.</p>
+        <textarea id="snippet" readonly></textarea>
+        <div class="row" style="margin-top:8px"><button class="sub" id="copySnippet">복사</button><span class="hint" id="copyInfo"></span></div>
+      </details>
+    </section>
+
+    <section id="manageBox" hidden>
+      <h2>등록된 캐릭터</h2>
+      <div class="chars" id="chars"></div>
+      <p class="hint">▲▼ 로 선택 화면 순서를 바꾸고, 수정은 이름·설명·가격을 위 입력칸에 불러옵니다. 삭제하면 PNG 파일도 함께 지워져요. (기본 캐릭터 폴더 밖의 파일은 지우지 않아요)</p>
     </section>
   </div>
 </main>
@@ -342,6 +379,109 @@ const SpriteCutter = (() => {
 window.SpriteCutter = SpriteCutter;
 
 /* ===========================================================================
+   캐릭터 목록(characters.json) 편집 + 게임 폴더 읽기/쓰기
+   - 폴더 접근은 handle 인터페이스(getDirectoryHandle/getFileHandle/removeEntry)만 사용하므로
+     File System Access API 의 실제 핸들과 테스트용 가짜 핸들 모두 동작한다.
+   =========================================================================== */
+const CharacterRepo = (() => {
+  const DIR = ['assets', 'player', 'characters'];
+  const FILE = 'characters.json';
+  const SAFE_DIR_PREFIX = 'assets/player/characters/';
+  const BASE = { id: 'tanjiro', name: '탄지로', desc: '기본 캐릭터 · 균형형', src: 'assets/player/tanjiro_sprite_448x64.png', price: 0, spriteOverrides: {} };
+
+  const emptyManifest = () => ({ version: 1, characters: [{ ...BASE }] });
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+
+  /** 같은 id 가 있으면 제자리에서 교체, 없으면 맨 뒤에 추가 */
+  function upsert(m, entry) {
+    const out = clone(m); const i = out.characters.findIndex((c) => c.id === entry.id);
+    if (i >= 0) out.characters[i] = entry; else out.characters.push(entry);
+    return out;
+  }
+  function remove(m, id) {
+    if (m.characters.length <= 1) throw new Error('캐릭터가 1명뿐이라 삭제할 수 없어요');
+    const out = clone(m); out.characters = out.characters.filter((c) => c.id !== id); return out;
+  }
+  function move(m, id, dir) {
+    const out = clone(m); const i = out.characters.findIndex((c) => c.id === id); const j = i + dir;
+    if (i < 0 || j < 0 || j >= out.characters.length) return out;
+    [out.characters[i], out.characters[j]] = [out.characters[j], out.characters[i]];
+    return out;
+  }
+
+  async function getDir(root, parts, create) { let d = root; for (const p of parts) d = await d.getDirectoryHandle(p, { create }); return d; }
+
+  /** 게임 폴더인지 확인 (assets / config / js 폴더가 있어야 함) */
+  async function verify(root) {
+    try { for (const n of ['assets', 'config', 'js']) await root.getDirectoryHandle(n); return true; } catch { return false; }
+  }
+
+  /** @returns {{manifest, exists}} 파일이 없으면 기본 목록, JSON 이 깨졌으면 예외 */
+  async function read(root) {
+    let text;
+    try {
+      const dir = await getDir(root, DIR, false);
+      text = await (await (await dir.getFileHandle(FILE)).getFile()).text();
+    } catch (e) {
+      if (e && e.name === 'NotFoundError') return { manifest: emptyManifest(), exists: false };
+      throw e;
+    }
+    let m;
+    try { m = JSON.parse(text); } catch { throw new Error('characters.json 형식이 올바르지 않아요. 파일을 확인해주세요.'); }
+    if (!m || !Array.isArray(m.characters)) throw new Error('characters.json 에 characters 배열이 없어요.');
+    return { manifest: m, exists: true };
+  }
+
+  async function writeFile(dir, name, data) {
+    const fh = await dir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable(); await w.write(data); await w.close();
+  }
+  const text = (m) => JSON.stringify(m, null, 2) + '\n';
+  async function writeManifest(root, m) { await writeFile(await getDir(root, DIR, true), FILE, text(m)); }
+
+  /** PNG 저장 + 목록 갱신. 같은 id 의 옛 PNG 는 다른 캐릭터가 안 쓰면 정리 */
+  async function register(root, entry, pngBlob) {
+    const { manifest } = await read(root);
+    const dir = await getDir(root, DIR, true);
+    const fileName = entry.src.slice(SAFE_DIR_PREFIX.length);
+    await writeFile(dir, fileName, pngBlob);
+    const old = manifest.characters.find((c) => c.id === entry.id);
+    const next = upsert(manifest, entry);
+    await writeManifest(root, next);
+    if (old && old.src !== entry.src) await removeFileIfUnused(dir, next, old.src);
+    return next;
+  }
+
+  async function removeFileIfUnused(dir, manifest, src) {
+    if (!src.startsWith(SAFE_DIR_PREFIX)) return;           // 기본 에셋 폴더 밖 파일은 건드리지 않음
+    if (manifest.characters.some((c) => c.src === src)) return;
+    try { await dir.removeEntry(src.slice(SAFE_DIR_PREFIX.length)); } catch { /* 이미 없으면 무시 */ }
+  }
+
+  async function unregister(root, id) {
+    const { manifest } = await read(root);
+    const target = manifest.characters.find((c) => c.id === id);
+    const next = remove(manifest, id);
+    await writeManifest(root, next);
+    if (target) await removeFileIfUnused(await getDir(root, DIR, true), next, target.src);
+    return next;
+  }
+
+  async function save(root, m) { await writeManifest(root, m); return m; }
+
+  async function thumbUrl(root, src) {
+    try {
+      const parts = src.split('/'); const file = parts.pop();
+      const dir = await getDir(root, parts, false);
+      return URL.createObjectURL(await (await dir.getFileHandle(file)).getFile());
+    } catch { return null; }
+  }
+
+  return { upsert, remove, move, verify, read, register, unregister, save, thumbUrl, emptyManifest, text, SAFE_DIR_PREFIX };
+})();
+window.CharacterRepo = CharacterRepo;
+
+/* ===========================================================================
    UI
    =========================================================================== */
 (() => {
@@ -387,7 +527,7 @@ window.SpriteCutter = SpriteCutter;
     drawSource(o);
     const res = SpriteCutter.buildSheet(srcData.data, srcData.width, srcData.height, o);
     lastResult = { ...res, opts: o };
-    $('empty').hidden = true; $('resultBox').hidden = false; $('snippetBox').hidden = false;
+    $('empty').hidden = true; $('resultBox').hidden = false;
     renderSheet();
     const ul = $('report'); ul.innerHTML = '';
     for (const r of res.report) {
@@ -397,6 +537,7 @@ window.SpriteCutter = SpriteCutter;
     }
     $('dlInfo').textContent = `${res.width}×${res.height}px · ${$('charId').value || 'character'}_${res.width}x${res.height}.png`;
     updateSnippet(res);
+    updateRegisterState();
     startAnim();
   }
 
@@ -442,17 +583,19 @@ window.SpriteCutter = SpriteCutter;
     const id = ($('charId').value || 'new_character').replace(/[^A-Za-z0-9_]/g, '_');
     const o = res.opts || lastResult.opts;
     const file = `${id}_${res.width}x${res.height}.png`;
+    const price = Number($('charPrice').value) || 0;
     const overrides = [];
     if (o.frameSize !== 64) overrides.push(`FRAME_WIDTH: ${o.frameSize}, FRAME_HEIGHT: ${o.frameSize}, RENDER_WIDTH: ${o.frameSize}, RENDER_HEIGHT: ${o.frameSize}`);
     if (o.baseline !== 61) overrides.push(`OFFSET_Y: ${2 + (61 - o.baseline)}`);
-    $('snippet').value =
-`  {
-    ID: '${id}',
-    NAME: '${id}',            // 화면에 보일 이름으로 바꾸세요
-    DESC: '설명을 적어주세요',
-    SRC: 'assets/player/characters/${file}',
-    SPRITE_OVERRIDES: {${overrides.length ? '\n      ' + overrides.join(',\n      ') + ',\n    ' : ''}},
-  },`;
+    const entry = { id, name: $('charName').value || id, desc: $('charDesc').value || '', src: `assets/player/characters/${file}`, price, spriteOverrides: overridesObj(o) };
+    $('snippet').value = JSON.stringify(entry, null, 2);
+  }
+
+  function overridesObj(o) {
+    const ov = {};
+    if (o.frameSize !== 64) Object.assign(ov, { FRAME_WIDTH: o.frameSize, FRAME_HEIGHT: o.frameSize, RENDER_WIDTH: o.frameSize, RENDER_HEIGHT: o.frameSize });
+    if (o.baseline !== 61) ov.OFFSET_Y = 2 + (61 - o.baseline);
+    return ov;
   }
 
   function schedule() { clearTimeout(timer); timer = setTimeout(process, 150); }
@@ -496,8 +639,125 @@ window.SpriteCutter = SpriteCutter;
     catch { $('snippet').select(); $('copyInfo').textContent = '선택됨 — Ctrl+C 로 복사하세요'; }
   });
 
+  /* ---------- 게임 폴더 연결 / 등록 UI ---------- */
+  const fsSupported = typeof window.showDirectoryPicker === 'function';
+  const HANDLE_DB = 'gogun-run-sprite-cutter', HANDLE_KEY = 'repo';
+  let root = null, manifest = null;
+
+  const idb = () => new Promise((res, rej) => { const r = indexedDB.open(HANDLE_DB, 1); r.onupgradeneeded = () => r.result.createObjectStore('h'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  async function saveHandle(h) { try { const db = await idb(); db.transaction('h', 'readwrite').objectStore('h').put(h, HANDLE_KEY); } catch { /* 저장 못 해도 동작에는 문제 없음 */ } }
+  async function loadHandle() { try { const db = await idb(); return await new Promise((res) => { const q = db.transaction('h').objectStore('h').get(HANDLE_KEY); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch { return null; } }
+
+  function setStatus(text, kind) { const el = $('repoStatus'); el.textContent = text; el.className = 'status' + (kind ? ' ' + kind : ''); }
+  function currentId() { return ($('charId').value || 'new_character').replace(/[^A-Za-z0-9_]/g, '_'); }
+
+  function updateRegisterState() {
+    const ready = !!(root && lastResult);
+    $('register').disabled = !ready;
+    $('fallbackDl').hidden = !lastResult || !!root;
+    if (!fsSupported) $('registerInfo').textContent = '이 브라우저는 폴더 연결을 지원하지 않아요. Chrome / Edge 를 쓰거나 "파일로 받기"를 이용하세요.';
+    else if (!root) $('registerInfo').textContent = '먼저 "게임 폴더 연결"로 Gogun-Run 폴더를 선택하세요.';
+    else if (!lastResult) $('registerInfo').textContent = '이미지를 불러오면 등록할 수 있어요.';
+    else $('registerInfo').textContent = '';
+  }
+
+  async function attach(handle, announce) {
+    if (!(await CharacterRepo.verify(handle))) { setStatus('Gogun-Run 폴더가 아니에요 (assets, config, js 폴더 필요)', 'bad'); return false; }
+    try {
+      const r = await CharacterRepo.read(handle);
+      root = handle; manifest = r.manifest;
+    } catch (e) { setStatus(e.message, 'bad'); return false; }
+    setStatus(`연결됨: ${handle.name} · 캐릭터 ${manifest.characters.length}명`, 'good');
+    if (announce) saveHandle(handle);
+    await renderChars(); updateRegisterState(); return true;
+  }
+
+  async function connect() {
+    if (!fsSupported) { setStatus('이 브라우저는 폴더 연결을 지원하지 않아요 (Chrome / Edge 사용)', 'bad'); return; }
+    try { const h = await window.showDirectoryPicker({ mode: 'readwrite', id: 'gogun-run' }); await attach(h, true); }
+    catch (e) { if (e && e.name !== 'AbortError') setStatus('폴더를 열지 못했어요: ' + e.message, 'bad'); }
+  }
+
+  async function renderChars() {
+    const box = $('chars'); box.innerHTML = '';
+    $('manageBox').hidden = !manifest;
+    if (!manifest) return;
+    for (const c of manifest.characters) {
+      const el = document.createElement('div'); el.className = 'char';
+      const url = await CharacterRepo.thumbUrl(root, c.src);
+      const th = document.createElement('div'); th.className = 'thumb'; th.style.width = '48px';
+      if (url) th.style.backgroundImage = `url(${url})`;
+      const meta = document.createElement('div'); meta.className = 'meta';
+      const b = document.createElement('b'); b.textContent = c.name;
+      const sp = document.createElement('span'); sp.textContent = `${c.id} · ${c.price ? c.price + '코인' : '무료'}`;
+      meta.append(b, sp);
+      const ops = document.createElement('div'); ops.className = 'ops';
+      const mk = (label, fn) => { const bt = document.createElement('button'); bt.className = 'sub'; bt.textContent = label; bt.addEventListener('click', fn); ops.appendChild(bt); };
+      mk('▲', () => reorder(c.id, -1)); mk('▼', () => reorder(c.id, 1));
+      mk('수정', () => { $('charId').value = c.id; $('charName').value = c.name; $('charDesc').value = c.desc || ''; $('charPrice').value = c.price || 0; if (lastResult) updateSnippet(lastResult); $('registerInfo').textContent = `"${c.name}" 정보를 불러왔어요. 이미지를 새로 넣고 등록하면 교체됩니다.`; });
+      mk('삭제', () => removeChar(c));
+      el.append(th, meta, ops); box.appendChild(el);
+    }
+  }
+
+  async function reorder(id, dir) { try { manifest = await CharacterRepo.save(root, CharacterRepo.move(manifest, id, dir)); await renderChars(); } catch (e) { setStatus(e.message, 'bad'); } }
+  async function removeChar(c) {
+    if (!confirm(`"${c.name}" (${c.id}) 을(를) 삭제할까요?\n${c.src.startsWith(CharacterRepo.SAFE_DIR_PREFIX) ? 'PNG 파일도 함께 지워집니다.' : '기본 에셋 파일은 지우지 않고 목록에서만 빠집니다.'}`)) return;
+    try { manifest = await CharacterRepo.unregister(root, c.id); setStatus(`연결됨: ${root.name} · 캐릭터 ${manifest.characters.length}명`, 'good'); await renderChars(); }
+    catch (e) { setStatus(e.message, 'bad'); }
+  }
+
+  function buildEntry() {
+    const o = lastResult.opts; const id = currentId();
+    return { id, name: $('charName').value.trim() || id, desc: $('charDesc').value.trim(), src: `${CharacterRepo.SAFE_DIR_PREFIX}${id}_${lastResult.width}x${lastResult.height}.png`, price: Math.max(0, Math.round(Number($('charPrice').value) || 0)), spriteOverrides: overridesObj(o) };
+  }
+  const pngBlob = () => new Promise((res) => sheetToCanvas().toBlob(res, 'image/png'));
+
+  async function registerNow() {
+    if (!root || !lastResult) return;
+    const entry = buildEntry();
+    if (manifest.characters.some((c) => c.id === entry.id) && !confirm(`ID "${entry.id}" 캐릭터가 이미 있어요. 덮어쓸까요?`)) return;
+    $('register').disabled = true;
+    try {
+      manifest = await CharacterRepo.register(root, entry, await pngBlob());
+      setStatus(`연결됨: ${root.name} · 캐릭터 ${manifest.characters.length}명`, 'good');
+      await renderChars();
+      updateRegisterState();
+      $('registerInfo').textContent = `✔ "${entry.name}" 등록 완료! 게임 화면을 새로고침(F5)하면 선택 화면에 나와요.`;
+    } catch (e) { updateRegisterState(); $('registerInfo').textContent = '등록 실패: ' + e.message; }
+  }
+
+  function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+  async function fallbackDownload() {
+    if (!lastResult) return;
+    const entry = buildEntry();
+    download(await pngBlob(), entry.src.slice(CharacterRepo.SAFE_DIR_PREFIX.length));
+    const m = CharacterRepo.upsert(manifest || CharacterRepo.emptyManifest(), entry);
+    download(new Blob([CharacterRepo.text(m)], { type: 'application/json' }), 'characters.json');
+    $('registerInfo').textContent = 'PNG와 characters.json 을 받았어요. 둘 다 assets/player/characters/ 폴더에 넣어(덮어쓰기) 주세요.';
+  }
+
+  $('connect').addEventListener('click', connect);
+  $('register').addEventListener('click', registerNow);
+  $('fallbackDl').addEventListener('click', fallbackDownload);
+  ['charName', 'charDesc', 'charPrice'].forEach((id) => $(id).addEventListener('input', () => lastResult && updateSnippet(lastResult)));
+
+  // 지난번에 연결한 폴더 자동 복구 (권한이 남아 있을 때만; 아니면 버튼 한 번으로 다시 허용)
+  (async () => {
+    if (!fsSupported) { updateRegisterState(); return; }
+    const h = await loadHandle();
+    if (!h) { updateRegisterState(); return; }
+    try {
+      if ((await h.queryPermission({ mode: 'readwrite' })) === 'granted') { await attach(h, false); return; }
+      $('connect').textContent = `"${h.name}" 다시 연결`;
+      $('connect').onclick = async () => { try { if ((await h.requestPermission({ mode: 'readwrite' })) === 'granted') await attach(h, false); } catch (e) { setStatus(e.message, 'bad'); } };
+      $('connect').removeEventListener('click', connect);
+    } catch { /* 무시 */ }
+    updateRegisterState();
+  })();
+
   updateKeyUI();
-  window.__SpriteCutterUI = { loadFile, process };
+  window.__SpriteCutterUI = { loadFile, process, attach, registerNow };
 })();
 </script>
 </body>
