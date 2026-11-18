@@ -8,6 +8,8 @@
  * - price 가 0 이면 처음부터 보유한 무료 품목이다.
  */
 
+import { PARTICLE_SHAPES, ROPE_STYLES, TIP_SHAPES } from '../game/CosmeticDraw.js';
+
 export const SHOP_ITEMS_URL = 'assets/shop/items.json';
 export const SHOP_STORAGE_KEY = 'gogun-run:shop';
 
@@ -65,13 +67,35 @@ export class ShopManager {
     const col = ShopManager._color;
     if (type === 'trail') {
       const pair = (arr, d) => (Array.isArray(arr) && arr.length ? arr.slice(0, 4).map((c) => col(c, d[0])) : d);
-      return { ...base, colors: pair(raw.colors, ['#cbd5e1', '#94a3b8']), runColors: pair(raw.runColors, ['#94a3b8', '#64748b']) };
+      return {
+        ...base,
+        colors: pair(raw.colors, ['#cbd5e1', '#94a3b8']),
+        runColors: pair(raw.runColors, ['#94a3b8', '#64748b']),
+        shape: PARTICLE_SHAPES.includes(raw.shape) ? raw.shape : 'square',
+        float: raw.float === true,
+        spin: raw.spin === true,
+      };
     }
     if (type === 'rope') {
-      return { ...base, glow: col(raw.glow, 'rgba(6, 214, 160, 0.45)'), core: col(raw.core, '#ffffff'), tip: col(raw.tip, '#ffd166') };
+      return {
+        ...base,
+        glow: col(raw.glow, 'rgba(6, 214, 160, 0.45)'), core: col(raw.core, '#ffffff'), tip: col(raw.tip, '#ffd166'),
+        style: ROPE_STYLES.includes(raw.style) ? raw.style : 'line',
+        tipShape: TIP_SHAPES.includes(raw.tipShape) ? raw.tipShape : 'circle',
+      };
     }
     if (type === 'effect') {
-      return { ...base, near: col(raw.near, '#ffd166'), perfect: col(raw.perfect, '#06d6a0'), ledge: col(raw.ledge, '#74c0fc') };
+      const label = (v) => {
+        const t = String(v ?? '').replace(/[\p{C}]/gu, '').trim().slice(0, 10);
+        return t || null;
+      };
+      const lb = raw.labels && typeof raw.labels === 'object' ? raw.labels : {};
+      return {
+        ...base,
+        near: col(raw.near, '#ffd166'), perfect: col(raw.perfect, '#06d6a0'), ledge: col(raw.ledge, '#74c0fc'),
+        shape: PARTICLE_SHAPES.includes(raw.shape) ? raw.shape : 'square',
+        labels: { near: label(lb.near), perfect: label(lb.perfect), ledge: label(lb.ledge) },
+      };
     }
     if (type === 'pet') {
       const src = String(raw.src ?? '');

@@ -1,4 +1,5 @@
 import { COSMETIC_TYPES } from './ShopManager.js';
+import { drawShape, drawRope, SHAPE_SCALE } from '../game/CosmeticDraw.js';
 
 const TAB_LABELS = { character: '캐릭터', cosmetic: '꾸미기', pet: '펫' };
 const COSMETIC_HEADINGS = { trail: '달리기 먼지', rope: '갈고리 와이어', effect: '니어미스 연출' };
@@ -19,6 +20,9 @@ export class ShopUI {
     this.onSelectCharacter = deps.onSelectCharacter || (() => {});
     this.onClose = deps.onClose || (() => {});
     this.tab = 'character';
+    /** @type {Array<(t:number)=>void>} 움직이는 미리보기 캔버스 그리기 함수 */
+    this._anims = [];
+    this._raf = 0;
 
     this.$coins = modal.querySelector('#shop-coins');
     this.$msg = modal.querySelector('#shop-msg');
@@ -47,12 +51,13 @@ export class ShopUI {
   }
 
   close() {
+    this._stopAnim();
     this.modal.style.display = 'none';
     this.shop.save();
     this.onClose();
   }
 
-  destroy() { window.removeEventListener('keydown', this._onKey, true); }
+  destroy() { this._stopAnim(); window.removeEventListener('keydown', this._onKey, true); }
 
   setMessage(text, kind = '') {
     this.$msg.textContent = text;
@@ -65,6 +70,7 @@ export class ShopUI {
     this.$coins.textContent = this.shop.coins.toLocaleString('ko-KR');
     for (const b of this.$tabs.querySelectorAll('button')) b.classList.toggle('active', b.dataset.tab === this.tab);
     this.$grid.textContent = '';
+    this._anims = [];
 
     if (this.tab === 'character') {
       this._section(null, this.characters.list.map((c) => this._characterCard(c)));
@@ -80,6 +86,38 @@ export class ShopUI {
       });
       this._section(null, [none, ...this.shop.itemsOfType('pet').map((it) => this._itemCard(it))]);
     }
+    this._startAnim();
+  }
+
+  // ----- 움직이는 미리보기 (열려 있는 동안에만 갱신) -----
+
+  _startAnim() {
+    if (this._raf || !this._anims.length) return;
+    const t0 = performance.now();
+    const loop = (now) => {
+      if (!this.isOpen()) { this._raf = 0; return; }
+      const t = Math.max(0, (now - t0) / 1000);
+      for (const fn of this._anims) fn(t);
+      this._raf = requestAnimationFrame(loop);
+    };
+    this._raf = requestAnimationFrame(loop);
+  }
+
+  _stopAnim() {
+    if (this._raf) cancelAnimationFrame(this._raf);
+    this._raf = 0;
+  }
+
+  /** 120×64 미리보기 캔버스 (draw(ctx, t) 를 계속 호출) */
+  _canvasPreview(draw) {
+    const c = document.createElement('canvas');
+    c.width = 120; c.height = 64;
+    c.className = 'shop-canvas';
+    const ctx = c.getContext('2d');
+    const fn = (t) => { ctx.clearRect(0, 0, 120, 64); draw(ctx, t); };
+    fn(0);
+    this._anims.push(fn);
+    return c;
   }
 
   _section(title, cards) {
@@ -115,9 +153,9 @@ export class ShopUI {
 
   _itemCard(it) {
     let preview;
-    if (it.type === 'trail') preview = this._dots([...it.colors, ...it.runColors.slice(0, 1)]);
-    else if (it.type === 'rope') preview = this._rope(it);
-    else if (it.type === 'effect') preview = this._dots([it.near, it.perfect, it.ledge]);
+    if (it.type === 'trail') preview = this._trailPreview(it);
+    else if (it.type === 'rope') preview = this._ropePreview(it);
+    else if (it.type === 'effect') preview = this._effectPreview(it);
     else preview = this._spritePreview(it.src, it.frameWidth, it.frameHeight, it.frames, it.fps, 1.5);
 
     const desc = it.type === 'pet' && it.magnet > 0 ? `${it.desc} (코인 자석 ${it.magnet}px)` : it.desc;
@@ -183,6 +221,70 @@ export class ShopUI {
     d.style.setProperty('--frames', String(frames));
     d.style.setProperty('--dur', `${(frames / fps).toFixed(3)}s`);
     return d;
+  }
+
+  /** 먼지: 바닥 위로 모양 입자가 계속 흩날림 */
+  _trailPreview(it) {
+    const cols = [...it.colors, ...it.runColors];
+    const N = 9;
+    return this._canvasPreview((ctx, t) => {
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.fillRect(0, 50, 120, 2);
+      for (let i = 0; i < N; i++) {
+        const ph = (t * 0.7 + i / N) % 1;                          // 0 → 1 로 수명 진행
+        const x = 22 + ph * 70 + Math.sin(i * 7.3) * 6;
+        const rise = it.float ? 30 : 16;
+        const y = 48 - Math.sin(ph * Math.PI) * rise - (it.float ? ph * 14 : 0) + Math.cos(i * 3.1) * 3;
+        ctx.globalAlpha = Math.min(1, (1 - ph) * 1.6);
+        const rot = it.spin || it.shape !== 'square' ? t * (it.spin ? 4 : 0.6) + i : 0;
+        drawShape(ctx, it.shape, Math.round(x), Math.round(y), (it.shape === 'square' ? 3.5 : 5.5), cols[i % cols.length], rot);
+      }
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  /** 와이어: 실제 게임과 같은 함수로 그림 */
+  _ropePreview(it) {
+    return this._canvasPreview((ctx, t) => {
+      drawRope(ctx, 10, 46, 108, 18, it, t);
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillRect(4, 46, 8, 8);                                    // 플레이어 쪽 끝
+    });
+  }
+
+  /** 니어미스 연출: 파편 + 라벨이 터지는 모습을 반복 */
+  _effectPreview(it) {
+    const labels = [
+      [it.labels?.perfect || 'PERFECT!', it.perfect],
+      [it.labels?.near || 'NEAR MISS', it.near],
+      [it.labels?.ledge || 'LEDGE SAVE', it.ledge],
+    ];
+    return this._canvasPreview((ctx, t) => {
+      const cyc = 1.5;
+      const idx = Math.floor(t / cyc) % labels.length;
+      const k = (t % cyc) / cyc;
+      const [text, color] = labels[idx];
+      const cx = 60, cy = 36;
+      // 파편
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2 + 0.3;
+        const d = 6 + k * 24 + (i % 3) * 3;
+        ctx.globalAlpha = Math.max(0, 1 - k * 1.3);
+        drawShape(ctx, it.shape, cx + Math.cos(a) * d, cy + Math.sin(a) * d, it.shape === 'square' ? 2.5 : 3.4, i % 3 === 0 ? '#ffffff' : color, t * 3 + i);
+      }
+      // 링
+      ctx.globalAlpha = Math.max(0, 1 - k * 1.5);
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, 4 + k * 22, 0, Math.PI * 2); ctx.stroke();
+      // 라벨
+      ctx.globalAlpha = Math.min(1, (1 - k) * 2.2);
+      ctx.font = 'bold 11px "Courier New", monospace';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 3; ctx.strokeStyle = '#0b0c10';
+      const ty = 12 - k * 6;
+      ctx.strokeText(text, cx, ty); ctx.fillStyle = color; ctx.fillText(text, cx, ty);
+      ctx.globalAlpha = 1;
+    });
   }
 
   _dots(colors) {

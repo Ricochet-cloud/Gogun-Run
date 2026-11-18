@@ -1,4 +1,5 @@
 import { PlayerState } from './Player.js';
+import { drawShape, SHAPE_SCALE } from './CosmeticDraw.js';
 
 /**
  * 타격감 연출 시스템 (EffectsSystem)
@@ -69,6 +70,8 @@ export class EffectsSystem {
       dust: ['#cbd5e1', '#94a3b8'],
       run: ['#94a3b8', '#64748b'],
       kinds: { NEAR: { ...KIND_STYLE.NEAR }, PERFECT: { ...KIND_STYLE.PERFECT }, LEDGE: { ...KIND_STYLE.LEDGE } },
+      dustShape: 'square', dustFloat: false, dustSpin: false,   // 먼지 입자 모양
+      burstShape: 'square',                                      // 니어미스 파편 모양
     };
   }
 
@@ -82,6 +85,27 @@ export class EffectsSystem {
     this.theme.kinds.NEAR.color = effect?.near || KIND_STYLE.NEAR.color;
     this.theme.kinds.PERFECT.color = effect?.perfect || KIND_STYLE.PERFECT.color;
     this.theme.kinds.LEDGE.color = effect?.ledge || KIND_STYLE.LEDGE.color;
+    this.theme.kinds.NEAR.label = effect?.labels?.near || KIND_STYLE.NEAR.label;
+    this.theme.kinds.PERFECT.label = effect?.labels?.perfect || KIND_STYLE.PERFECT.label;
+    this.theme.kinds.LEDGE.label = effect?.labels?.ledge || KIND_STYLE.LEDGE.label;
+    this.theme.dustShape = trail?.shape || 'square';
+    this.theme.dustFloat = !!trail?.float;
+    this.theme.dustSpin = !!trail?.spin;
+    this.theme.burstShape = effect?.shape || 'square';
+  }
+
+  /** 먼지 입자에 꾸미기 모양/움직임을 덧입힘 (기본 'square' 이면 기존과 동일) */
+  _dust(p) {
+    const t = this.theme;
+    if (t.dustShape !== 'square') {
+      p.shape = t.dustShape;
+      p.size = p.size + 1;                       // 모양 입자는 조금 크게 해야 알아볼 수 있음
+      p.life *= 1.5; p.maxLife *= 1.5;
+      p.rot = Math.random() * Math.PI * 2;
+    }
+    if (t.dustFloat) { p.gravity = -(30 + Math.random() * 40); p.vy = -Math.abs(p.vy) - 10; }   // 위로 떠오름
+    if (t.dustSpin) p.spin = (Math.random() < 0.5 ? -1 : 1) * (3 + Math.random() * 5);
+    this._push(p);
   }
 
   _pickColor(list) {
@@ -169,7 +193,7 @@ export class EffectsSystem {
    */
   jumpPuff(x, y) {
     for (let i = 0; i < 4; i++) {
-      this._push({
+      this._dust({
         x: x + (Math.random() - 0.5) * 14,
         y: y - 1,
         vx: -(30 + Math.random() * 60),
@@ -191,7 +215,7 @@ export class EffectsSystem {
     const count = 4 + Math.min(6, Math.floor(Math.max(0, impactSpeed) / 160));
     for (let i = 0; i < count; i++) {
       const dir = i % 2 === 0 ? 1 : -1;
-      this._push({
+      this._dust({
         x: x + (Math.random() - 0.5) * 14,
         y: y - 1,
         vx: dir * (40 + Math.random() * 100),
@@ -262,6 +286,9 @@ export class EffectsSystem {
         life: 0.3,
         maxLife: 0.3,
         drag: 3,
+        ...(this.theme.burstShape !== 'square'
+          ? { shape: this.theme.burstShape, size: 3, life: 0.5, maxLife: 0.5, rot: Math.random() * 6.28, spin: (Math.random() - 0.5) * 8 }
+          : {}),
       });
     }
     this._ring(sx, sy, 4, kind === 'PERFECT' ? 26 : 18, 0.26, style.color);
@@ -377,6 +404,7 @@ export class EffectsSystem {
       for (let i = this.particles.length - 1; i >= 0; i--) {
         const p = this.particles[i];
         if (p.gravity) p.vy += p.gravity * dt;
+        if (p.spin) p.rot = (p.rot || 0) + p.spin * dt;
         if (p.drag) {
           const k = Math.max(0, 1 - p.drag * dt);
           p.vx *= k;
@@ -427,7 +455,7 @@ export class EffectsSystem {
     this.runDustTimer += dt;
     while (this.runDustTimer >= interval) {
       this.runDustTimer -= interval;
-      this._push({
+      this._dust({
         x: player.x + 14 + Math.random() * 6,
         y: player.y + player.height - 1,
         vx: -(speed * 0.3 + Math.random() * 40),
@@ -489,8 +517,12 @@ export class EffectsSystem {
 
     for (const p of this.particles) {
       ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-      ctx.fillStyle = p.color;
-      ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+      if (p.shape) {
+        drawShape(ctx, p.shape, Math.round(p.x), Math.round(p.y), p.size * SHAPE_SCALE * 0.8, p.color, p.rot || 0);
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+      }
     }
 
     for (const r of this.rings) {

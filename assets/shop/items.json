@@ -20,7 +20,7 @@
       "id": "trail_sakura",
       "type": "trail",
       "name": "벚꽃 먼지",
-      "desc": "분홍빛 꽃잎이 흩날려요",
+      "desc": "분홍 꽃잎이 흩날려요",
       "price": 150,
       "colors": [
         "#ffc2d1",
@@ -29,7 +29,10 @@
       "runColors": [
         "#ffb3c6",
         "#ff8fab"
-      ]
+      ],
+      "shape": "petal",
+      "float": true,
+      "spin": true
     },
     {
       "id": "trail_flame",
@@ -44,13 +47,14 @@
       "runColors": [
         "#ff9f1c",
         "#e85d04"
-      ]
+      ],
+      "shape": "spark"
     },
     {
       "id": "trail_frost",
       "type": "trail",
       "name": "서리 먼지",
-      "desc": "차가운 얼음 가루",
+      "desc": "반짝이는 얼음 결정",
       "price": 200,
       "colors": [
         "#e0fbfc",
@@ -59,7 +63,9 @@
       "runColors": [
         "#a5d8ff",
         "#74c0fc"
-      ]
+      ],
+      "shape": "star",
+      "spin": true
     },
     {
       "id": "trail_thunder",
@@ -74,7 +80,172 @@
       "runColors": [
         "#ffe066",
         "#fcc419"
-      ]
+      ],
+      "shape": "spark"
+    },
+    {
+      "id": "trail_ink",
+      "type": "trail",
+      "name": "먹물 자국",
+      "desc": "검은 먹이 튀어요",
+      "price": 150,
+      "colors": [
+        "#2b2d42",
+        "#4a4e69"
+      ],
+      "runColors": [
+        "#22223b",
+        "#4a4e69"
+      ],
+      "shape": "square",
+      "float": false,
+      "spin": false
+    },
+    {
+      "id": "trail_leaf",
+      "type": "trail",
+      "name": "단풍잎",
+      "desc": "붉은 낙엽이 뒹굴어요",
+      "price": 250,
+      "colors": [
+        "#ff9f1c",
+        "#d9480f"
+      ],
+      "runColors": [
+        "#e8590c",
+        "#a0430a"
+      ],
+      "shape": "leaf",
+      "float": false,
+      "spin": true
+    },
+    {
+      "id": "trail_heart",
+      "type": "trail",
+      "name": "하트 먼지",
+      "desc": "하트가 둥실 떠올라요",
+      "price": 300,
+      "colors": [
+        "#ffb3c6",
+        "#ff4d6d"
+      ],
+      "runColors": [
+        "#ff8fab",
+        "#e5446d"
+      ],
+      "shape": "heart",
+      "float": true,
+      "spin": false
+    },
+    {
+      "id": "trail_bubble",
+      "type": "trail",
+      "name": "비눗방울",
+      "desc": "방울이 퐁퐁 올라가요",
+      "price": 300,
+      "colors": [
+        "#a5f3fc",
+        "#74c0fc"
+      ],
+      "runColors": [
+        "#bde0fe",
+        "#90e0ef"
+      ],
+      "shape": "bubble",
+      "float": true,
+      "spin": false
+    },
+    {
+      "id": "trail_star",
+      "type": "trail",
+      "name": "별가루",
+      "desc": "반짝이는 별이 흩날려요",
+      "price": 350,
+      "colors": [
+        "#fff3b0",
+        "#ffd60a"
+      ],
+      "runColors": [
+        "#ffe066",
+        "#f4a300"
+      ],
+      "shape": "star",
+      "float": false,
+      "spin": true
+    },
+    {
+      "id": "trail_note",
+      "type": "trail",
+      "name": "음표 먼지",
+      "desc": "음표가 떠올라요",
+      "price": 350,
+      "colors": [
+        "#c77dff",
+        "#9d4edd"
+      ],
+      "runColors": [
+        "#e0aaff",
+        "#7b2cbf"
+      ],
+      "shape": "note",
+      "float": true,
+      "spin": false
+    },
+    {
+      "id": "trail_ghost",
+      "type": "trail",
+      "name": "도깨비불",
+      "desc": "푸른 불꽃이 일렁여요",
+      "price": 400,
+      "colors": [
+        "#b9fbc0",
+        "#06d6a0"
+      ],
+      "runColors": [
+        "#5eead4",
+        "#0d9488"
+      ],
+      "shape": "spark",
+      "float": true,
+      "spin": false
+    },
+    {
+      "id": "trail_neon",
+      "type": "trail",
+      "name": "네온 스파크",
+      "desc": "네온 불꽃이 튀어요",
+      "price": 450,
+      "colors": [
+        "#00f5d4",
+        "#f15bb5"
+      ],
+      "runColors": [
+        "#9b5de5",
+        "#00bbf9"
+      ],
+      "shape": "spark",
+      "float": false,
+      "spin": true
+    },
+    {
+      "id": "trail_rainbow",
+      "type": "trail",
+      "name": "무지개 가루",
+      "desc": "일곱 빛깔 별가루",
+      "price": 500,
+      "colors": [
+        "#ff595e",
+        "#ffca3a",
+        "#8ac926",
+        "#1982c4"
+      ],
+      "runColors": [
+        "#6a4c93",
+        "#ff595e"
+      ],
+      "shape": "star",
+      "float": false,
+      "spin": true
     },
     {
       "id": "rope_default",
@@ -94,7 +265,8 @@
       "price": 180,
       "glow": "rgba(230, 57, 70, 0.5)",
       "core": "#ffd6d9",
-      "tip": "#ff4d6d"
+      "tip": "#ff4d6d",
+      "tipShape": "diamond"
     },
     {
       "id": "rope_azure",
@@ -114,7 +286,104 @@
       "price": 300,
       "glow": "rgba(255, 209, 102, 0.55)",
       "core": "#fff7d6",
-      "tip": "#ffffff"
+      "tip": "#ffffff",
+      "tipShape": "star"
+    },
+    {
+      "id": "rope_dashed",
+      "type": "rope",
+      "name": "점선 에너지",
+      "desc": "흐르는 점선 광선",
+      "price": 250,
+      "glow": "rgba(116, 192, 252, 0.40)",
+      "core": "#e7f5ff",
+      "tip": "#74c0fc",
+      "style": "dashed",
+      "tipShape": "circle"
+    },
+    {
+      "id": "rope_thread",
+      "type": "rope",
+      "name": "붉은 실",
+      "desc": "인연의 붉은 실",
+      "price": 280,
+      "glow": "rgba(230, 57, 70, 0.35)",
+      "core": "#e63946",
+      "tip": "#ff4d6d",
+      "style": "line",
+      "tipShape": "heart"
+    },
+    {
+      "id": "rope_chain",
+      "type": "rope",
+      "name": "쇠사슬",
+      "desc": "묵직한 강철 사슬",
+      "price": 300,
+      "glow": "rgba(148, 163, 184, 0.45)",
+      "core": "#e2e8f0",
+      "tip": "#94a3b8",
+      "style": "chain",
+      "tipShape": "diamond"
+    },
+    {
+      "id": "rope_wave",
+      "type": "rope",
+      "name": "물결 줄",
+      "desc": "출렁이는 물줄기",
+      "price": 350,
+      "glow": "rgba(34, 211, 238, 0.40)",
+      "core": "#ecfeff",
+      "tip": "#22d3ee",
+      "style": "wave",
+      "tipShape": "circle"
+    },
+    {
+      "id": "rope_beads",
+      "type": "rope",
+      "name": "염주 줄",
+      "desc": "구슬이 이어진 줄",
+      "price": 350,
+      "glow": "rgba(180, 130, 70, 0.50)",
+      "core": "#fde68a",
+      "tip": "#f59e0b",
+      "style": "beads",
+      "tipShape": "circle"
+    },
+    {
+      "id": "rope_double",
+      "type": "rope",
+      "name": "꼬임 줄",
+      "desc": "두 가닥이 꼬여 있어요",
+      "price": 400,
+      "glow": "rgba(255, 143, 171, 0.40)",
+      "core": "#ffffff",
+      "tip": "#ff8fab",
+      "style": "double",
+      "tipShape": "star"
+    },
+    {
+      "id": "rope_lightning",
+      "type": "rope",
+      "name": "번개 줄",
+      "desc": "지지직! 번개 와이어",
+      "price": 450,
+      "glow": "rgba(255, 214, 10, 0.50)",
+      "core": "#fff9db",
+      "tip": "#ffd60a",
+      "style": "zigzag",
+      "tipShape": "diamond"
+    },
+    {
+      "id": "rope_rainbow",
+      "type": "rope",
+      "name": "무지개 줄",
+      "desc": "색이 흐르는 와이어",
+      "price": 600,
+      "glow": "rgba(255, 255, 255, 0.0)",
+      "core": "#ffffff",
+      "tip": "#ffffff",
+      "style": "rainbow",
+      "tipShape": "star"
     },
     {
       "id": "effect_default",
@@ -134,7 +403,8 @@
       "price": 220,
       "near": "#ffc2d1",
       "perfect": "#ff4d8d",
-      "ledge": "#ffe3ec"
+      "ledge": "#ffe3ec",
+      "shape": "petal"
     },
     {
       "id": "effect_flame",
@@ -144,7 +414,8 @@
       "price": 220,
       "near": "#ff9f1c",
       "perfect": "#ff4d00",
-      "ledge": "#ffd166"
+      "ledge": "#ffd166",
+      "shape": "spark"
     },
     {
       "id": "effect_thunder",
@@ -154,7 +425,136 @@
       "price": 260,
       "near": "#ffe066",
       "perfect": "#b197fc",
-      "ledge": "#fff3bf"
+      "ledge": "#fff3bf",
+      "shape": "spark"
+    },
+    {
+      "id": "effect_kr",
+      "type": "effect",
+      "name": "한글 연출",
+      "desc": "한글로 외쳐요",
+      "price": 250,
+      "near": "#ffd166",
+      "perfect": "#06d6a0",
+      "ledge": "#74c0fc",
+      "shape": "spark",
+      "labels": {
+        "near": "아슬아슬!",
+        "perfect": "완벽!",
+        "ledge": "턱걸이!"
+      }
+    },
+    {
+      "id": "effect_star",
+      "type": "effect",
+      "name": "스타 연출",
+      "desc": "별이 팡팡 터져요",
+      "price": 300,
+      "near": "#ffe066",
+      "perfect": "#fff3b0",
+      "ledge": "#ffd8a8",
+      "shape": "star",
+      "labels": {
+        "near": "NICE!",
+        "perfect": "SUPER★",
+        "ledge": "SAFE!"
+      }
+    },
+    {
+      "id": "effect_heart",
+      "type": "effect",
+      "name": "두근두근",
+      "desc": "하트가 터져요",
+      "price": 300,
+      "near": "#ff8fab",
+      "perfect": "#ff4d6d",
+      "ledge": "#ffc2d1",
+      "shape": "heart",
+      "labels": {
+        "near": "두근!",
+        "perfect": "심쿵♥",
+        "ledge": "휴~"
+      }
+    },
+    {
+      "id": "effect_ice",
+      "type": "effect",
+      "name": "아이스",
+      "desc": "차가운 결정이 터져요",
+      "price": 300,
+      "near": "#a5d8ff",
+      "perfect": "#e0fbfc",
+      "ledge": "#74c0fc",
+      "shape": "star",
+      "labels": {
+        "near": "COOL",
+        "perfect": "FREEZE!",
+        "ledge": "CHILL"
+      }
+    },
+    {
+      "id": "effect_music",
+      "type": "effect",
+      "name": "멜로디",
+      "desc": "음표가 터져요",
+      "price": 350,
+      "near": "#c77dff",
+      "perfect": "#ffd166",
+      "ledge": "#74c0fc",
+      "shape": "note",
+      "labels": {
+        "near": "도~",
+        "perfect": "HIGH C!",
+        "ledge": "레~"
+      }
+    },
+    {
+      "id": "effect_comic",
+      "type": "effect",
+      "name": "만화 효과음",
+      "desc": "만화처럼 슉! 캬!",
+      "price": 350,
+      "near": "#ff5d73",
+      "perfect": "#ffd60a",
+      "ledge": "#4cc9f0",
+      "shape": "spark",
+      "labels": {
+        "near": "슉!",
+        "perfect": "캬아!",
+        "ledge": "휙!"
+      }
+    },
+    {
+      "id": "effect_neon",
+      "type": "effect",
+      "name": "네온 글리치",
+      "desc": "사이버 네온",
+      "price": 450,
+      "near": "#00f5d4",
+      "perfect": "#f15bb5",
+      "ledge": "#9b5de5",
+      "shape": "spark",
+      "labels": {
+        "near": "NEON",
+        "perfect": "GLITCH!",
+        "ledge": "BOOT"
+      }
+    },
+    {
+      "id": "effect_gold",
+      "type": "effect",
+      "name": "황금 연출",
+      "desc": "번쩍이는 황금빛",
+      "price": 500,
+      "near": "#ffd166",
+      "perfect": "#fff1b8",
+      "ledge": "#f4a300",
+      "shape": "star",
+      "labels": {
+        "near": "GREAT",
+        "perfect": "GOLDEN!",
+        "ledge": "NICE"
+      }
     },
     {
       "id": "pet_wisp_blue",

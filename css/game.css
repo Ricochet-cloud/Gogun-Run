@@ -1478,3 +1478,14 @@
 @media (prefers-reduced-motion: reduce) {
   .result-row, .grade-letter { transition: none !important; }
 }
+
+
+/* 상점 꾸미기 미리보기 캔버스 */
+.shop-canvas {
+  width: 100%;
+  max-width: 120px;
+  height: 64px;
+  align-self: center;
+  margin-bottom: 26px;
+  image-rendering: auto;
+}
