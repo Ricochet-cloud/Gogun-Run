@@ -580,7 +580,7 @@ window.CharacterRepo = CharacterRepo;
   }
 
   function updateSnippet(res) {
-    const id = ($('charId').value || 'new_character').replace(/[^A-Za-z0-9_]/g, '_');
+    const id = sanitizeId($('charId').value, 'new_character');
     const o = res.opts || lastResult.opts;
     const file = `${id}_${res.width}x${res.height}.png`;
     const price = Number($('charPrice').value) || 0;
@@ -608,7 +608,7 @@ window.CharacterRepo = CharacterRepo;
     srcData = ctx.getImageData(0, 0, bmp.width, bmp.height);
     srcName = file.name.replace(/\.[^.]+$/, '');
     $('srcInfo').textContent = `${file.name} · ${bmp.width}×${bmp.height}px`;
-    if ($('charId').value === 'new_character') $('charId').value = srcName.replace(/[^A-Za-z0-9_]/g, '_').toLowerCase() || 'new_character';
+    if ($('charId').value === 'new_character') $('charId').value = sanitizeId(srcName.toLowerCase());
     process();
   }
 
@@ -627,7 +627,7 @@ window.CharacterRepo = CharacterRepo;
 
   $('download').addEventListener('click', () => {
     if (!lastResult) return;
-    const id = ($('charId').value || 'character').replace(/[^A-Za-z0-9_]/g, '_');
+    const id = sanitizeId($('charId').value, 'character');
     sheetToCanvas().toBlob((blob) => {
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
       a.download = `${id}_${lastResult.width}x${lastResult.height}.png`; a.click();
@@ -649,7 +649,13 @@ window.CharacterRepo = CharacterRepo;
   async function loadHandle() { try { const db = await idb(); return await new Promise((res) => { const q = db.transaction('h').objectStore('h').get(HANDLE_KEY); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch { return null; } }
 
   function setStatus(text, kind) { const el = $('repoStatus'); el.textContent = text; el.className = 'status' + (kind ? ' ' + kind : ''); }
-  function currentId() { return ($('charId').value || 'new_character').replace(/[^A-Za-z0-9_]/g, '_'); }
+  /** 캐릭터 ID 정리: 영문/숫자/_ 만 허용. 한글 파일명처럼 전부 지워지면 임의 ID 를 만든다. (앞뒤 _ 는 GitHub Pages 가 숨기므로 제거) */
+  function sanitizeId(raw, fallback) {
+    let v = String(raw || '').replace(/[^A-Za-z0-9_]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+    if (!v) v = fallback || ('char_' + Date.now().toString(36));
+    return v;
+  }
+  function currentId() { return sanitizeId($('charId').value, 'new_character'); }
 
   function updateRegisterState() {
     const ready = !!(root && lastResult);
