@@ -24,6 +24,22 @@
       "src": "assets/player/characters/placeholder_gold_448x64.png",
       "price": 500,
       "spriteOverrides": {}
+    },
+    {
+      "id": "___________________________1_",
+      "name": "짝퉁거미",
+      "desc": "짝퉁...?",
+      "src": "assets/player/characters/___________________________1__448x64.png",
+      "price": 500,
+      "spriteOverrides": {}
+    },
+    {
+      "id": "______________________",
+      "name": "팔있는 샹크스",
+      "desc": "팔이 안잘렸더라면?",
+      "src": "assets/player/characters/_______________________448x64.png",
+      "price": 500,
+      "spriteOverrides": {}
     }
   ]
 }
