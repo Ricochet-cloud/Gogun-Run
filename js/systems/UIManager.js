@@ -125,7 +125,7 @@ export class UIManager {
           <!-- 좌: 프로필 카드 -->
           <section class="home-card home-profile">
             <div class="profile-head">
-              <div id="profile-avatar" class="profile-avatar"></div>
+              <button id="profile-avatar" class="profile-avatar ui-interactive" type="button" title="눌러서 캐릭터 바꾸기" aria-label="캐릭터 바꾸기"><span class="profile-avatar-hint">변경</span></button>
               <div class="profile-id">
                 <div class="profile-name-row">
                   <span id="profile-name" class="profile-name">러너</span>
@@ -147,14 +147,7 @@ export class UIManager {
           <!-- 중: 캐릭터 -->
           <section class="home-stage">
             <div id="char-select" class="char-select" style="display: none;">
-              <button id="btn-char-prev" class="ui-btn ui-btn-icon ui-interactive char-arrow" title="이전 캐릭터 (←)">◀</button>
-              <div class="char-card">
-                <div class="char-preview-frame"><div id="char-preview" class="char-preview"></div></div>
-                <div id="char-name" class="char-name"></div>
-                <div id="char-desc" class="char-desc"></div>
-                <div id="char-dots" class="char-dots"></div>
-              </div>
-              <button id="btn-char-next" class="ui-btn ui-btn-icon ui-interactive char-arrow" title="다음 캐릭터 (→)">▶</button>
+              <div class="char-preview-frame"><div id="char-preview" class="char-preview"></div></div>
             </div>
           </section>
 
@@ -288,6 +281,15 @@ export class UIManager {
         </div>
       </div>
 
+      <!-- 4-0. 캐릭터 고르기 모달 (프로필 아바타를 누르면 열림) -->
+      <div id="modal-char" class="ui-modal-wrapper" style="display: none;">
+        <div class="ui-panel char-pick-panel">
+          <h2 class="ui-title">캐릭터 선택</h2>
+          <div id="char-pick-list" class="char-pick-list"></div>
+          <button id="btn-char-pick-close" class="ui-btn ui-btn-secondary ui-interactive">닫기</button>
+        </div>
+      </div>
+
       <!-- 4-1. 상점 모달 (SHOP) -->
       <div id="modal-shop" class="ui-modal-wrapper" style="display: none;">
         <div class="ui-panel shop-panel">
@@ -389,11 +391,10 @@ export class UIManager {
       btnStartGame: this.overlay.querySelector('#btn-start-game'),
       charSelect: this.overlay.querySelector('#char-select'),
       charPreview: this.overlay.querySelector('#char-preview'),
-      charName: this.overlay.querySelector('#char-name'),
-      charDesc: this.overlay.querySelector('#char-desc'),
-      charDots: this.overlay.querySelector('#char-dots'),
-      btnCharPrev: this.overlay.querySelector('#btn-char-prev'),
-      btnCharNext: this.overlay.querySelector('#btn-char-next'),
+      modalChar: this.overlay.querySelector('#modal-char'),
+      charPickList: this.overlay.querySelector('#char-pick-list'),
+      btnCharPickClose: this.overlay.querySelector('#btn-char-pick-close'),
+      profileAvatarBtn: this.overlay.querySelector('#profile-avatar'),
       btnReadySettings: this.overlay.querySelector('#btn-ready-settings'),
 
       // 일시정지 화면
@@ -523,8 +524,9 @@ export class UIManager {
     this.elements.btnGameOverShop?.addEventListener('click', () => this.openShop());
 
     // 1-1. 캐릭터 선택 (버튼 / 좌우 방향키)
-    this.elements.btnCharPrev?.addEventListener('click', () => this._cycleCharacter(-1));
-    this.elements.btnCharNext?.addEventListener('click', () => this._cycleCharacter(1));
+    this.elements.profileAvatarBtn?.addEventListener('click', () => this.openCharPicker());
+    this.elements.btnCharPickClose?.addEventListener('click', () => this.closeCharPicker());
+    this.elements.modalChar?.addEventListener('click', (e) => { if (e.target === this.elements.modalChar) this.closeCharPicker(); });
     this._onCharKeyDown = (e) => {
       if (!this.gameState.is(GameState.READY)) return;
       if (this.isModalOpen()) return;
@@ -922,7 +924,7 @@ export class UIManager {
   /** 설정/상점 모달이 열려 있는지 (열려 있으면 게임 입력을 막기 위해 사용) */
   isModalOpen() {
     const open = (el) => !!el && el.style.display !== 'none';
-    return open(this.elements.modalSettings) || open(this.elements.modalShop) || !!this.cloudUI?.isOpen();
+    return open(this.elements.modalSettings) || open(this.elements.modalShop) || open(this.elements.modalChar) || !!this.cloudUI?.isOpen();
   }
 
   openShop() {
@@ -1000,9 +1002,34 @@ export class UIManager {
     }
   }
 
+  /** 프로필 아바타를 누르면 뜨는 캐릭터 고르기 창 */
+  openCharPicker() {
+    if (!this.characters || !this.elements.modalChar) return;
+    const list = this.characters.ownedList();
+    const cur = this.characters.getSelected().ID;
+    this.elements.charPickList.innerHTML = list.map((c) =>
+      `<button type="button" class="char-pick-item ui-interactive${c.ID === cur ? ' active' : ''}" data-id="${c.ID}">` +
+      `<span class="char-pick-face" style="background-image:url('${c.SRC}')"></span>` +
+      `<span class="char-pick-name">${c.NAME}</span></button>`).join('');
+    this.elements.charPickList.querySelectorAll('.char-pick-item').forEach((b) => {
+      b.addEventListener('click', () => {
+        this.onSelectCharacter(b.dataset.id);
+        this._renderCharacterSelect();
+        this._refreshAvatar();
+        this.closeCharPicker();
+      });
+    });
+    this.elements.modalChar.style.display = 'flex';
+  }
+
+  closeCharPicker() {
+    if (this.elements.modalChar) this.elements.modalChar.style.display = 'none';
+  }
+
   /** 캐릭터 목록이 바뀐 뒤(JSON 로드 등) 선택 UI 갱신 */
   refreshCharacterSelect() {
     this._renderCharacterSelect();
+    this._refreshAvatar();
   }
 
   /**
@@ -1026,9 +1053,7 @@ export class UIManager {
 
     const list = this.characters.ownedList();
     el.charSelect.style.display = 'flex';
-    const multi = list.length > 1;
-    el.btnCharPrev.style.visibility = multi ? 'visible' : 'hidden';
-    el.btnCharNext.style.visibility = multi ? 'visible' : 'hidden';
+    this._refreshAvatar();
 
     const ch = this.characters.getSelected();
     const cfg = this.characters.getPlayerAssetConfig(ch.ID);
@@ -1052,12 +1077,6 @@ export class UIManager {
     p.style.animation = 'none';
     void p.offsetWidth;
     p.style.animation = '';
-
-    el.charName.textContent = ch.NAME;
-    el.charDesc.textContent = ch.DESC || '';
-    el.charDots.innerHTML = list
-      .map((c) => `<span class="char-dot${c.ID === ch.ID ? ' active' : ''}"></span>`)
-      .join('');
   }
 
   /**

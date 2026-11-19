@@ -1521,3 +1521,33 @@
 .rank-face { width: 28px; height: 28px; flex: none; border-radius: 50%; background-color: #1e293b; background-repeat: no-repeat; background-size: auto 56px; background-position: -17.5px -10.5px; image-rendering: pixelated; }
 .rank-name { flex: 1; min-width: 0; text-align: left; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rank-score { font-size: 12px; color: #ffd166; }
+
+
+/* 홈: 중앙은 달리는 캐릭터만 (카드/화살표 없음) */
+.home-stage .char-select { margin: 0; justify-content: center; }
+.home-stage .char-preview-frame { width: auto; height: auto; }
+
+/* 프로필 아바타 = 캐릭터 변경 버튼 */
+button.profile-avatar { cursor: pointer; padding: 0; position: relative; overflow: hidden; }
+button.profile-avatar:hover { border-color: #fff3c4; }
+.profile-avatar-hint {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  font-size: 9px; line-height: 14px; color: #ffd166;
+  background: rgba(8, 10, 16, 0.78); font-family: inherit;
+}
+
+/* 캐릭터 고르기 창 */
+.char-pick-panel { display: flex; flex-direction: column; gap: 12px; align-items: center; padding: 16px; max-width: 92%; max-height: 90%; overflow-y: auto; }
+.char-pick-list { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.char-pick-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 84px; padding: 8px 4px; cursor: pointer; font-family: inherit; color: #cbd5e1;
+  background: #161b2e; border: 2px solid #2d3754; border-radius: 4px;
+}
+.char-pick-item:hover { border-color: #5b6a99; }
+.char-pick-item.active { border-color: #ffd166; box-shadow: 0 0 10px rgba(255, 209, 102, 0.3); }
+.char-pick-face {
+  width: 56px; height: 56px; image-rendering: pixelated; background-repeat: no-repeat;
+  background-size: auto 112px; background-position: -35px -21px; background-color: #0f1322; border-radius: 3px;
+}
+.char-pick-name { font-size: 11px; }
