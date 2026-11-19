@@ -10,12 +10,12 @@
  * 값이 비어 있으면 온라인 기능(로그인/랭킹)이 꺼지고, 게임은 기존처럼 브라우저에만 저장하며 정상 동작합니다.
  */
 export const FIREBASE_CONFIG = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: '',
+  apiKey: "AIzaSyDGMQSSbyuJaJAGy6D7vazq8lijIL85RL0",
+  authDomain: "gogun-run.firebaseapp.com",
+  projectId: "gogun-run",
+  storageBucket: "gogun-run.firebasestorage.app",
+  messagingSenderId: "511375804019",
+  appId: "1:511375804019:web:eff7c816f55e1de4bf8c06"
 };
 
 /** gstatic CDN 에서 불러올 Firebase SDK 버전 */
