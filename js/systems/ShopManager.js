@@ -171,6 +171,7 @@ export class ShopManager {
     } catch (e) {
       // 저장 불가 환경에서는 세션 동안만 유지
     }
+    if (this.onSaved) this.onSaved();   // 온라인 동기화 훅 (CloudSync)
   }
 
   /** 카탈로그가 바뀐 뒤 장착 중인 항목이 유효/보유 상태인지 확인하고 아니면 기본값으로 되돌림 */

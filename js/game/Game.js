@@ -2,6 +2,7 @@ import { GAME_CONFIG } from '../../config/game.config.js';
 import { ASSETS_CONFIG } from '../../config/assets.config.js';
 import { assetLoader } from '../systems/AssetLoader.js';
 import { AudioManager } from '../systems/AudioManager.js';
+import { CloudSync } from '../systems/CloudSync.js';
 import { UIManager } from '../systems/UIManager.js';
 import { GameState, GameStateManager } from './GameState.js';
 import { Player, PlayerState } from './Player.js';
@@ -85,6 +86,8 @@ export class Game {
     this.shop = new ShopManager(this.characters);
     this.profile = new ProfileManager();
     this.characters.isOwned = (ch) => this.shop.ownsCharacter(ch);
+    // 온라인 계정/동기화 (설정이 없으면 비활성 — 게임은 로컬로만 동작)
+    this.cloud = new CloudSync({ profile: this.profile, shop: this.shop, characters: this.characters, scoreManager: this.scoreManager });
     this.player = new Player(
       this.config.PLAYER,
       this.config.PHYSICS,
@@ -148,6 +151,7 @@ export class Game {
       characters: this.characters,
       shop: this.shop,
       profile: this.profile,
+      cloud: this.cloud,
       onSelectCharacter: (id) => this.selectCharacter(id),
     });
 
@@ -176,8 +180,15 @@ export class Game {
     this.applyEquipment();
     this.shop.onChange(() => this.applyEquipment());
     this.uiManager.refreshCharacterSelect();
+    // 서버 기록을 불러오면 화면/장착 상태 갱신
+    this.cloud.onApplied = () => {
+      this.applyEquipment();
+      this.uiManager.refreshCharacterSelect();
+      this.uiManager._refreshHome();
+    };
+    this.cloud.init();   // 기다리지 않음 (네트워크가 느려도 게임은 바로 시작)
     // 지갑은 탭을 닫거나 숨길 때도 저장
-    this._onPageHide = () => this.shop.save();
+    this._onPageHide = () => { if (this.cloud.wiping) return; this.shop.save(); this.cloud.flush(); };
     window.addEventListener('pagehide', this._onPageHide);
 
     // 1. 에셋 매니페스트 구성 및 비동기 일괄 로드
@@ -645,6 +656,7 @@ export class Game {
     });
     this.shop.save(); // 이번 판에서 모은 코인 저장
     this.profile.recordRun({ nearMisses: this.nearMiss.totalCount, coins: this.coins.runCollected });
+    this.cloud.onRunFinished();   // 최고 점수/코인 즉시 서버 저장
 
     this.gameState.setState(GameState.GAME_OVER);
     this.player.die();

@@ -1,4 +1,5 @@
 import { GameState } from '../game/GameState.js';
+import { CloudUI } from './CloudUI.js';
 import { ShopUI } from './ShopUI.js';
 import { NICKNAME_MAX } from './ProfileManager.js';
 
@@ -32,6 +33,7 @@ export class UIManager {
     this.shop = options.shop || null;
     this.profile = options.profile || null;
     this.onSelectCharacter = options.onSelectCharacter || (() => {});
+    this.cloud = options.cloud || null;
 
     this.lastDeathCause = 'OBSTACLE';
     // 직전 플레이의 니어미스 통계 (게임 오버 화면 표시용)
@@ -133,6 +135,7 @@ export class UIManager {
                 <div id="profile-msg" class="profile-msg"></div>
               </div>
             </div>
+            <div id="account-row" class="account-row"></div>
             <div class="profile-stats">
               <div class="profile-stat"><span>🏆 최고 기록</span><b id="ready-best-score">000000</b></div>
               <div class="profile-stat"><span>🏃 플레이 횟수</span><b id="profile-runs">0</b></div>
@@ -507,6 +510,13 @@ export class UIManager {
           this._renderCharacterSelect();
           this._refreshHome();
         },
+      });
+    }
+    if (this.cloud) {
+      this.cloudUI = new CloudUI(this.overlay, {
+        cloud: this.cloud,
+        characters: this.characters,
+        onChanged: () => { this._renderCharacterSelect(); this._refreshHome(); },
       });
     }
     this.elements.btnReadyShop?.addEventListener('click', () => this.openShop());
@@ -912,7 +922,7 @@ export class UIManager {
   /** 설정/상점 모달이 열려 있는지 (열려 있으면 게임 입력을 막기 위해 사용) */
   isModalOpen() {
     const open = (el) => !!el && el.style.display !== 'none';
-    return open(this.elements.modalSettings) || open(this.elements.modalShop);
+    return open(this.elements.modalSettings) || open(this.elements.modalShop) || !!this.cloudUI?.isOpen();
   }
 
   openShop() {
@@ -1082,6 +1092,7 @@ export class UIManager {
       this.overlay.parentNode.removeChild(this.overlay);
     }
     if (this.shopUI) this.shopUI.destroy();
+    if (this.cloudUI) this.cloudUI.destroy();
     if (this._onCharKeyDown && typeof window !== 'undefined') {
       window.removeEventListener('keydown', this._onCharKeyDown);
     }

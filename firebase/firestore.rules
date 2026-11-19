@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 내 기록(코인/상점/통계): 본인만 읽고 쓸 수 있음. 삭제 불가.
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && validUser(request.resource.data)
+        && (resource == null || request.resource.data.bestScore >= resource.data.bestScore);
+      allow delete: if false;
+    }
+
+    // 랭킹: 로그인한 사람은 누구나 읽기, 쓰기는 본인 문서만. 점수는 내려갈 수 없음.
+    match /leaderboard/{uid} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && validBoard(request.resource.data)
+        && (resource == null || request.resource.data.bestScore >= resource.data.bestScore);
+      allow delete: if false;
+    }
+
+    function validUser(d) {
+      return d.nickname is string && d.nickname.size() > 0 && d.nickname.size() <= 40
+        && d.bestScore is number && d.bestScore >= 0 && d.bestScore <= 1000000
+        && d.runs is number && d.runs >= 0
+        && d.nearMisses is number && d.nearMisses >= 0
+        && d.coinsEarned is number && d.coinsEarned >= 0
+        && d.coins is number && d.coins >= 0 && d.coins <= 100000000
+        && d.ownedCharacters is list && d.ownedCharacters.size() <= 200
+        && d.ownedItems is list && d.ownedItems.size() <= 200
+        && d.equipped is map
+        && d.selectedCharacter is string && d.selectedCharacter.size() <= 64;
+    }
+
+    function validBoard(d) {
+      return d.nickname is string && d.nickname.size() > 0 && d.nickname.size() <= 40
+        && d.bestScore is number && d.bestScore >= 0 && d.bestScore <= 1000000
+        && d.characterId is string && d.characterId.size() <= 64;
+    }
+  }
+}

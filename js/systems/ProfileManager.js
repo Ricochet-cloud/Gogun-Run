@@ -51,6 +51,7 @@ export class ProfileManager {
     } catch (e) {
       // 저장 불가 환경에서는 세션 동안만 유지
     }
+    if (this.onSaved) this.onSaved();   // 온라인 동기화 훅 (CloudSync)
   }
 
   /**

@@ -119,6 +119,7 @@ export class CharacterManager {
     } catch (e) {
       // 저장 불가 환경(시크릿 모드 등)에서는 세션 동안만 유지
     }
+    if (this.onSelected) this.onSelected();   // 온라인 동기화 훅 (CloudSync)
     return ch;
   }
 
