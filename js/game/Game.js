@@ -740,16 +740,19 @@ export class Game {
     if (!this.gameState.is(GameState.READY)) this.powerUps.renderItems(this.renderer.ctx);
 
     // 6-1. 펫 (플레이어 뒤)
-    this.pet.render(this.renderer.ctx);
+    const onTitle = this.gameState.is(GameState.READY);   // 홈 화면에서는 캐릭터/펫을 그리지 않는다
+    if (!onTitle) this.pet.render(this.renderer.ctx);
 
     // 7. 플레이어 스프라이트 렌더링 (공중제비 회전 지원)
     const rctx = this.renderer.ctx;
-    this.powerUps.renderBehindPlayer(rctx, this.player);
-    rctx.save();
-    rctx.globalAlpha = this.powerUps.playerAlpha();
-    this.player.render(rctx);
-    rctx.restore();
-    this.powerUps.renderFrontOfPlayer(rctx, this.player);
+    if (!onTitle) {
+      this.powerUps.renderBehindPlayer(rctx, this.player);
+      rctx.save();
+      rctx.globalAlpha = this.powerUps.playerAlpha();
+      this.player.render(rctx);
+      rctx.restore();
+      this.powerUps.renderFrontOfPlayer(rctx, this.player);
+    }
 
     // 7-1. 파티클/링/팝업/콤보 HUD
     this.effects.drawFront(this.renderer.ctx);

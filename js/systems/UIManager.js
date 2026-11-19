@@ -114,16 +114,8 @@ export class UIManager {
       <!-- 2. 홈 화면 (READY) -->
       <div id="screen-ready" class="ui-screen home-screen" style="display: none;">
         <div class="home-top">
-          <div class="home-brand">
-            <div class="badge-theme">DEMON SLAYER RUNNER</div>
-            <h1 class="ui-title logo-text">GOGUN RUN</h1>
-          </div>
-          <div class="home-wallet" title="보유 코인">🪙 <span id="ready-coins" class="coin-val">0</span></div>
-        </div>
-
-        <div class="home-main">
-          <!-- 좌: 프로필 카드 -->
-          <section class="home-card home-profile">
+          <!-- 프로필: 항상 보이는 작은 카드 -->
+          <section class="home-profile">
             <div class="profile-head">
               <button id="profile-avatar" class="profile-avatar ui-interactive" type="button" title="눌러서 캐릭터 바꾸기" aria-label="캐릭터 바꾸기"><span class="profile-avatar-hint">변경</span></button>
               <div class="profile-id">
@@ -132,44 +124,34 @@ export class UIManager {
                   <input id="profile-name-input" class="profile-name-input ui-interactive" type="text" maxlength="24" style="display: none;" aria-label="닉네임">
                   <button id="btn-edit-name" class="profile-edit ui-interactive" title="닉네임 바꾸기">✎</button>
                 </div>
+                <div class="profile-stats">
+                  <span title="최고 기록">🏆 <b id="ready-best-score">000000</b></span>
+                  <span title="플레이 횟수">🏃 <b id="profile-runs">0</b></span>
+                  <span title="누적 니어미스">⚡ <b id="profile-near">0</b></span>
+                </div>
                 <div id="profile-msg" class="profile-msg"></div>
               </div>
             </div>
             <div id="account-row" class="account-row"></div>
-            <div class="profile-stats">
-              <div class="profile-stat"><span>🏆 최고 기록</span><b id="ready-best-score">000000</b></div>
-              <div class="profile-stat"><span>🏃 플레이 횟수</span><b id="profile-runs">0</b></div>
-              <div class="profile-stat"><span>⚡ 누적 니어미스</span><b id="profile-near">0</b></div>
-            </div>
-            <button class="ui-btn ui-btn-subtle home-soon" disabled>✨ 프로필 꾸미기 (준비 중)</button>
           </section>
+          <div class="home-wallet" title="보유 코인">🪙 <span id="ready-coins" class="coin-val">0</span></div>
+        </div>
 
-          <!-- 중: 캐릭터 -->
-          <section class="home-stage">
-            <div id="char-select" class="char-select" style="display: none;">
-              <div class="char-preview-frame"><div id="char-preview" class="char-preview"></div></div>
-            </div>
-          </section>
-
-          <!-- 우: 메뉴 -->
+        <div class="home-center">
+          <div class="home-brand">
+            <div class="badge-theme">DEMON SLAYER RUNNER</div>
+            <h1 class="ui-title logo-text">GOGUN RUN</h1>
+          </div>
+          <button id="btn-start-game" class="ui-btn ui-btn-primary ui-interactive home-start">▶ 게임 시작</button>
           <nav class="home-menu">
-            <button id="btn-start-game" class="ui-btn ui-btn-primary ui-interactive home-start">
-              ▶ 게임 시작
-            </button>
-            <button id="btn-ready-shop" class="ui-btn ui-btn-secondary ui-interactive">
-              🛒 상점
-            </button>
-            <button id="btn-ready-rank" class="ui-btn ui-btn-subtle" disabled>
-              🏆 랭킹 (준비 중)
-            </button>
-            <button id="btn-ready-settings" class="ui-btn ui-btn-secondary ui-interactive">
-              ⚙ 환경 설정
-            </button>
+            <button id="btn-ready-shop" class="ui-btn ui-btn-secondary ui-interactive">🛒 상점</button>
+            <button id="btn-ready-rank" class="ui-btn ui-btn-subtle" disabled>🏆 랭킹</button>
+            <button id="btn-ready-settings" class="ui-btn ui-btn-secondary ui-interactive">⚙ 설정</button>
           </nav>
         </div>
 
         <div class="home-guide">
-          <span>[SPACE]/[↑] 점프</span><span>[Z]/[J]/우클릭 갈고리</span><span>[P]/[ESC] 일시정지</span><span>[←][→] 캐릭터 변경</span>
+          <span>[SPACE]/[↑] 점프</span><span>[Z]/[J]/우클릭 갈고리</span><span>[P]/[ESC] 일시정지</span>
         </div>
       </div>
 
@@ -389,8 +371,6 @@ export class UIManager {
       // 시작 화면
       readyBestScore: this.overlay.querySelector('#ready-best-score'),
       btnStartGame: this.overlay.querySelector('#btn-start-game'),
-      charSelect: this.overlay.querySelector('#char-select'),
-      charPreview: this.overlay.querySelector('#char-preview'),
       modalChar: this.overlay.querySelector('#modal-char'),
       charPickList: this.overlay.querySelector('#char-pick-list'),
       btnCharPickClose: this.overlay.querySelector('#btn-char-pick-close'),
@@ -1045,38 +1025,11 @@ export class UIManager {
   }
 
   /**
-   * 캐릭터 선택 영역 갱신 (미리보기는 CSS steps 애니메이션으로 달리기 프레임 재생)
+   * 캐릭터 선택 갱신 (홈에는 프로필 아바타만 있음)
    */
   _renderCharacterSelect() {
-    const el = this.elements;
-    if (!this.characters || !el.charSelect) return;
-
-    const list = this.characters.ownedList();
-    el.charSelect.style.display = 'flex';
+    if (!this.characters) return;
     this._refreshAvatar();
-
-    const ch = this.characters.getSelected();
-    const cfg = this.characters.getPlayerAssetConfig(ch.ID);
-    const fw = cfg.FRAME_WIDTH || 64;
-    const fh = cfg.FRAME_HEIGHT || 64;
-    const run = cfg.ANIMATIONS?.RUN || { FRAMES: [0], FPS: 1 };
-    const frames = run.FRAMES.length;
-    const scale = (this.overlay.clientHeight || 720) >= 520 ? 3 : 2;
-    const frame = p0frame(el);
-    if (frame) { frame.style.width = `${fw * scale}px`; frame.style.height = `${fh * scale}px`; }
-
-    const p = el.charPreview;
-    p.style.width = `${fw * scale}px`;
-    p.style.height = `${fh * scale}px`;
-    p.style.backgroundImage = `url("${ch.SRC}")`;
-    p.style.backgroundSize = 'auto 100%';
-    p.style.setProperty('--char-run-shift', `${-fw * scale * frames}px`);
-    p.style.setProperty('--char-run-frames', String(frames));
-    p.style.setProperty('--char-run-duration', `${(frames / (run.FPS || 10)).toFixed(3)}s`);
-    // 애니메이션 재시작 (캐릭터 교체 시 첫 프레임부터)
-    p.style.animation = 'none';
-    void p.offsetWidth;
-    p.style.animation = '';
   }
 
   /**
