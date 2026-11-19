@@ -149,8 +149,8 @@ export class InputManager {
       return;
     }
 
-    // 일반 좌클릭 및 화면 터치는 점프로 처리
-    this._emit('jump');
+    // 일반 좌클릭 및 화면 터치는 점프로 처리 (source='pointer': 메인 화면에서는 게임 시작으로 쓰지 않음)
+    this._emit('jump', 'pointer');
   }
 
   /**
@@ -198,11 +198,11 @@ export class InputManager {
    * 액션 실행
    * @param {string} action
    */
-  _emit(action) {
+  _emit(action, source) {
     const listeners = this._actionListeners[action];
     if (listeners) {
       for (const listener of listeners) {
-        listener();
+        listener(source);
       }
     }
   }

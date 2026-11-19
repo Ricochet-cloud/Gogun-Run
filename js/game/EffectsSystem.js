@@ -67,8 +67,8 @@ export class EffectsSystem {
 
     // 꾸미기 테마 (상점에서 장착한 먼지 색 / 니어미스 연출 색)
     this.theme = {
-      dust: ['#cbd5e1', '#94a3b8'],
-      run: ['#94a3b8', '#64748b'],
+      dust: ['#f1f5f9', '#cbd5e1'],
+      run: ['#f8fafc', '#e2e8f0', '#cbd5e1'],
       kinds: { NEAR: { ...KIND_STYLE.NEAR }, PERFECT: { ...KIND_STYLE.PERFECT }, LEDGE: { ...KIND_STYLE.LEDGE } },
       dustShape: 'square', dustFloat: false, dustSpin: false,   // 먼지 입자 모양
       burstShape: 'square',                                      // 니어미스 파편 모양
@@ -80,8 +80,8 @@ export class EffectsSystem {
    * @param {{ trail?: Object|null, effect?: Object|null }} cosmetics ShopManager 아이템 객체
    */
   setCosmetics({ trail = null, effect = null } = {}) {
-    this.theme.dust = trail?.colors?.length ? trail.colors : ['#cbd5e1', '#94a3b8'];
-    this.theme.run = trail?.runColors?.length ? trail.runColors : ['#94a3b8', '#64748b'];
+    this.theme.dust = trail?.colors?.length ? trail.colors : ['#f1f5f9', '#cbd5e1'];
+    this.theme.run = trail?.runColors?.length ? trail.runColors : ['#f8fafc', '#e2e8f0', '#cbd5e1'];
     this.theme.kinds.NEAR.color = effect?.near || KIND_STYLE.NEAR.color;
     this.theme.kinds.PERFECT.color = effect?.perfect || KIND_STYLE.PERFECT.color;
     this.theme.kinds.LEDGE.color = effect?.ledge || KIND_STYLE.LEDGE.color;
@@ -192,13 +192,13 @@ export class EffectsSystem {
    * 점프 순간 발밑 먼지
    */
   jumpPuff(x, y) {
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 8; i++) {
       this._dust({
         x: x + (Math.random() - 0.5) * 14,
         y: y - 1,
         vx: -(30 + Math.random() * 60),
         vy: -(8 + Math.random() * 26),
-        size: Math.random() < 0.5 ? 2 : 3,
+        size: 3 + Math.floor(Math.random() * 3),
         color: this._pickColor(this.theme.dust),
         life: 0.22,
         maxLife: 0.22,
@@ -212,7 +212,7 @@ export class EffectsSystem {
    * @param {number} impactSpeed 착지 직전 낙하 속도 (px/s)
    */
   landImpact(x, y, impactSpeed = 0) {
-    const count = 4 + Math.min(6, Math.floor(Math.max(0, impactSpeed) / 160));
+    const count = 8 + Math.min(6, Math.floor(Math.max(0, impactSpeed) / 160));
     for (let i = 0; i < count; i++) {
       const dir = i % 2 === 0 ? 1 : -1;
       this._dust({
@@ -220,7 +220,7 @@ export class EffectsSystem {
         y: y - 1,
         vx: dir * (40 + Math.random() * 100),
         vy: -(20 + Math.random() * 55),
-        size: Math.random() < 0.5 ? 2 : 3,
+        size: 3 + Math.floor(Math.random() * 3),
         color: this._pickColor(this.theme.dust),
         life: 0.24,
         maxLife: 0.24,
@@ -251,7 +251,7 @@ export class EffectsSystem {
         y: y + (Math.random() - 0.5) * 14,
         vx: -(110 + Math.random() * 120),
         vy: (Math.random() - 0.5) * 120,
-        size: Math.random() < 0.5 ? 2 : 3,
+        size: 3 + Math.floor(Math.random() * 3),
         color: Math.random() < 0.5 ? '#e2e8f0' : '#06d6a0',
         life: 0.3,
         maxLife: 0.3,
@@ -281,7 +281,7 @@ export class EffectsSystem {
         y: sy,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        size: Math.random() < 0.5 ? 2 : 3,
+        size: 3 + Math.floor(Math.random() * 3),
         color: Math.random() < 0.6 ? style.color : '#ffffff',
         life: 0.3,
         maxLife: 0.3,
@@ -451,20 +451,20 @@ export class EffectsSystem {
     }
     // 빠를수록 먼지를 더 자주 뿌림
     const ratio = Math.max(0, Math.min(1, (speed - this.baseSpeed) / (this.maxSpeed - this.baseSpeed)));
-    const interval = 0.11 - 0.05 * ratio;
+    const interval = 0.055 - 0.02 * ratio;
     this.runDustTimer += dt;
     while (this.runDustTimer >= interval) {
       this.runDustTimer -= interval;
       this._dust({
-        x: player.x + 14 + Math.random() * 6,
+        x: player.x + 10 + Math.random() * 8,
         y: player.y + player.height - 1,
         vx: -(speed * 0.3 + Math.random() * 40),
         vy: -(8 + Math.random() * 24),
-        size: 2,
+        size: 5 + Math.floor(Math.random() * 4),
         color: this._pickColor(this.theme.run),
-        life: 0.2 + Math.random() * 0.12,
-        maxLife: 0.32,
-        gravity: 90,
+        life: 0.35 + Math.random() * 0.2,
+        maxLife: 0.55,
+        gravity: 40,
       });
     }
   }

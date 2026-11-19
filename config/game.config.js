@@ -80,13 +80,13 @@ export const GAME_CONFIG = Object.freeze({
         height: 22,
         hitbox: { offsetX: 4, offsetY: 4, width: 28, height: 14 },
         flyY: 88,
-        extraSpeed: 55,
+        extraSpeed: 25,
         warn: true,
-        minSpeed: 262,
-        weight: 0.9,
+        minSpeed: 340,
+        weight: 0.35,
       },
     ],
-    WARNING_TIME: 0.9,          // 경고(!)가 먼저 뜨고 이 시간(초) 뒤에 장애물이 나타남
+    WARNING_TIME: 1.3,          // 경고(!)가 먼저 뜨고 이 시간(초) 뒤에 장애물이 나타남
     // 장애물 간 안전 최소/최대 거리 (px)
     MIN_GAP_DISTANCE: 340,
     MAX_GAP_DISTANCE: 520,

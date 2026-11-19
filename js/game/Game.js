@@ -223,7 +223,7 @@ export class Game {
     }
 
     // 2. 입력 액션 연결
-    this.inputManager.on('jump', () => this.handleJump());
+    this.inputManager.on('jump', (source) => this.handleJump(source));
     this.inputManager.on('hook', () => this.handleHook());
     this.inputManager.on('pause', () => this.togglePause());
 
@@ -286,7 +286,7 @@ export class Game {
   /**
    * 점프 / 시작 / 재시작 단축키 액션 처리 (STEP 6 입력 가드 및 디바운스)
    */
-  handleJump() {
+  handleJump(source) {
     // 설정/상점 창이 열려 있으면 스페이스/엔터가 게임 시작·재시작으로 새지 않게 막는다
     if (this.uiManager.isModalOpen()) return;
     if (this.gameState.is(GameState.PLAYING)) {
@@ -298,6 +298,8 @@ export class Game {
         this.player.jump();
       }
     } else if (this.gameState.is(GameState.READY)) {
+      // 메인 화면의 빈 곳을 눌러서는 시작하지 않는다 ("게임 시작" 버튼 / 스페이스·엔터만)
+      if (source === 'pointer') return;
       this.startGame();
     } else if (this.gameState.is(GameState.GAME_OVER)) {
       // 350ms 디바운스로 게임오버 순간 키 연타에 의한 의도치 않은 즉시 재시작 방지
